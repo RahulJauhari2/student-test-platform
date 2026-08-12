@@ -1,0 +1,263 @@
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
+dotenv.config();
+
+const connectDB = require('./config/db');
+const User = require('./models/User');
+const Subject = require('./models/Subject');
+const Topic = require('./models/Topic');
+const Question = require('./models/Question');
+const TestResult = require('./models/TestResult');
+
+const seedData = async () => {
+  try {
+    await connectDB();
+
+    console.log('Clearing existing data...');
+    await User.deleteMany({});
+    await Subject.deleteMany({});
+    await Topic.deleteMany({});
+    await Question.deleteMany({});
+    await TestResult.deleteMany({});
+
+    console.log('Creating demo users...');
+    const admin = await User.create({
+      name: 'Alex Mercer (Admin)',
+      email: 'admin@demo.com',
+      password: 'password123',
+      role: 'admin',
+      collegeName: 'System Administration',
+      isVerified: true,
+    });
+
+    const teacher = await User.create({
+      name: 'Prof. Sarah Jenkins',
+      email: 'teacher@demo.com',
+      password: 'password123',
+      role: 'teacher',
+      collegeName: 'Department of Computer Science',
+      isVerified: true,
+    });
+
+    const demoStudent = await User.create({
+      name: 'Rahul Sharma',
+      email: 'student@demo.com',
+      password: 'password123',
+      role: 'student',
+      collegeName: 'MIT Boston',
+      isVerified: true,
+    });
+
+    const otherStudentsData = [
+      { name: 'Priya Patel', email: 'priya@stanford.edu', collegeName: 'Stanford University' },
+      { name: 'Aarav Kumar', email: 'aarav@iitd.ac.in', collegeName: 'IIT Delhi' },
+      { name: 'Elena Rostova', email: 'elena@oxford.edu', collegeName: 'Oxford University' },
+      { name: 'Michael Chang', email: 'michael@harvard.edu', collegeName: 'Harvard University' },
+      { name: 'Sophia Chen', email: 'sophia@caltech.edu', collegeName: 'Caltech' },
+      { name: 'David Miller', email: 'david@mit.edu', collegeName: 'MIT Boston' },
+    ];
+
+    const studentDocs = [];
+    for (const s of otherStudentsData) {
+      const doc = await User.create({
+        ...s,
+        password: 'password123',
+        role: 'student',
+        isVerified: true,
+      });
+      studentDocs.push(doc);
+    }
+    studentDocs.push(demoStudent);
+
+    console.log('Creating subjects & topics...');
+    const csSubject = await Subject.create({
+      name: 'Computer Science',
+      code: 'CS101',
+      description: 'Core concepts in Algorithms, Data Structures & Web Tech',
+      iconName: 'Code',
+      colorGradient: 'from-blue-500 to-cyan-500',
+    });
+
+    const cHindiSubject = await Subject.create({
+      name: 'C Programming (हिंदी)',
+      code: 'CS102',
+      description: 'C भाषा के मूलभूत सिद्धांत (Variables, Loops, Functions, Arrays)',
+      iconName: 'Code',
+      colorGradient: 'from-emerald-500 to-teal-600',
+    });
+
+    const mathSubject = await Subject.create({
+      name: 'Mathematics',
+      code: 'MATH201',
+      description: 'Calculus, Algebra, and Discrete Math',
+      iconName: 'Calculator',
+      colorGradient: 'from-purple-500 to-pink-500',
+    });
+
+    const dsTopic = await Topic.create({
+      subjectId: csSubject._id,
+      name: 'Data Structures & Algorithms',
+      description: 'Arrays, Binary Trees, Graphs, and Big-O Complexity Analysis',
+      timeLimitMinutes: 5,
+      questionCount: 4,
+    });
+
+    const webTopic = await Topic.create({
+      subjectId: csSubject._id,
+      name: 'Web Development & APIs',
+      description: 'HTML5, JavaScript ES6+, React, Node.js and REST API standards',
+      timeLimitMinutes: 5,
+      questionCount: 4,
+    });
+
+    const cHindiTopic = await Topic.create({
+      subjectId: cHindiSubject._id,
+      name: 'C Language Fundamentals (हिंदी)',
+      description: 'C भाषा के basic syntax, data types, loops और I/O functions',
+      timeLimitMinutes: 5,
+      questionCount: 10,
+    });
+
+    console.log('Creating question bank (including 10 Hindi C Programming questions)...');
+
+    // 10 Hindi C Questions
+    const hindiCQuestions = [
+      {
+        questionText: "C भाषा में प्रोग्राम की शुरुआत किस फ़ंक्शन से होती है?",
+        options: ["main()", "start()", "init()", "begin()"],
+        correctOptionIndex: 0,
+        explanation: "हर C प्रोग्राम की execution main() फ़ंक्शन से शुरू होती है।",
+        difficulty: "Easy"
+      },
+      {
+        questionText: "C भाषा में एक variable को declare करने के लिए क्या आवश्यक है?",
+        options: ["उसका नाम", "उसका data type", "दोनों नाम और data type", "कुछ भी नहीं"],
+        correctOptionIndex: 2,
+        explanation: "Variable declare करने के लिए नाम और data type दोनों देना ज़रूरी है।",
+        difficulty: "Easy"
+      },
+      {
+        questionText: "C में printf() फ़ंक्शन का उपयोग किसके लिए होता है?",
+        options: ["इनपुट लेने के लिए", "आउटपुट दिखाने के लिए", "लूप चलाने के लिए", "फ़ाइल खोलने के लिए"],
+        correctOptionIndex: 1,
+        explanation: "printf() का उपयोग स्क्रीन पर आउटपुट दिखाने के लिए किया जाता है।",
+        difficulty: "Easy"
+      },
+      {
+        questionText: "scanf() फ़ंक्शन का उपयोग किसके लिए होता है?",
+        options: ["आउटपुट दिखाने के लिए", "इनपुट लेने के लिए", "लूप चलाने के लिए", "फ़ाइल बंद करने के लिए"],
+        correctOptionIndex: 1,
+        explanation: "scanf() का उपयोग यूज़र से इनपुट लेने के लिए किया जाता है।",
+        difficulty: "Easy"
+      },
+      {
+        questionText: "C भाषा में comment लिखने के लिए कौन सा symbol इस्तेमाल होता है?",
+        options: ["//", "/* */", "#", "%%"],
+        correctOptionIndex: 1,
+        explanation: "C में single-line comment // और multi-line comment /* */ से लिखे जाते हैं।",
+        difficulty: "Easy"
+      },
+      {
+        questionText: "C में integer data type कितने bytes लेता है (आमतौर पर)?",
+        options: ["1 byte", "2 bytes", "4 bytes", "8 bytes"],
+        correctOptionIndex: 2,
+        explanation: "अधिकतर systems पर int 4 bytes का होता है।",
+        difficulty: "Medium"
+      },
+      {
+        questionText: "C में array क्या होता है?",
+        options: ["एक single variable", "एक ही type के variables का collection", "random values का set", "function का नाम"],
+        correctOptionIndex: 1,
+        explanation: "Array एक ही data type के कई values को store करने का तरीका है।",
+        difficulty: "Medium"
+      },
+      {
+        questionText: "C में for loop का उपयोग किसके लिए होता है?",
+        options: ["condition check करने के लिए", "repetition (दोहराव) के लिए", "function call करने के लिए", "memory allocate करने के लिए"],
+        correctOptionIndex: 1,
+        explanation: "for loop का उपयोग statements को बार-बार चलाने के लिए किया जाता है।",
+        difficulty: "Easy"
+      },
+      {
+        questionText: "C में string को किस data type से represent किया जाता है?",
+        options: ["char array", "int array", "float array", "double array"],
+        correctOptionIndex: 0,
+        explanation: "C में string को char array के रूप में represent किया जाता है।",
+        difficulty: "Medium"
+      },
+      {
+        questionText: "C में header file stdio.h किस काम के लिए होती है?",
+        options: ["math functions", "input-output functions", "string functions", "file handling functions"],
+        correctOptionIndex: 1,
+        explanation: "stdio.h में input-output functions जैसे printf() और scanf() होते हैं।",
+        difficulty: "Easy"
+      }
+    ];
+
+    for (const q of hindiCQuestions) {
+      await Question.create({
+        ...q,
+        subjectId: cHindiSubject._id,
+        topicId: cHindiTopic._id,
+      });
+    }
+
+    // Data Structures Questions
+    await Question.create([
+      {
+        subjectId: csSubject._id,
+        topicId: dsTopic._id,
+        questionText: 'What is the worst-case time complexity of Quick Sort algorithm?',
+        options: ['O(n log n)', 'O(n²)', 'O(n)', 'O(1)'],
+        correctOptionIndex: 1,
+        explanation: 'Quick Sort takes O(n²) in the worst case when the pivot chosen is consistently the smallest or largest element.',
+        difficulty: 'Medium',
+      },
+      {
+        subjectId: csSubject._id,
+        topicId: dsTopic._id,
+        questionText: 'Which data structure follows the LIFO (Last In First Out) principle?',
+        options: ['Queue', 'Stack', 'Linked List', 'Binary Tree'],
+        correctOptionIndex: 1,
+        explanation: 'A Stack follows the Last-In-First-Out (LIFO) principle.',
+        difficulty: 'Easy',
+      },
+    ]);
+
+    // Seed mock test results
+    const leaderboardSeedData = [
+      { student: studentDocs[0], score: 40, accuracy: 100, time: 95, topic: cHindiTopic, sub: cHindiSubject },
+      { student: studentDocs[1], score: 38, accuracy: 95, time: 110, topic: dsTopic, sub: csSubject },
+      { student: studentDocs[2], score: 36, accuracy: 90, time: 125, topic: webTopic, sub: csSubject },
+      { student: studentDocs[3], score: 34, accuracy: 88, time: 140, topic: cHindiTopic, sub: cHindiSubject },
+    ];
+
+    for (const item of leaderboardSeedData) {
+      await TestResult.create({
+        studentId: item.student._id,
+        studentName: item.student.name,
+        collegeName: item.student.collegeName,
+        subjectId: item.sub._id,
+        subjectName: item.sub.name,
+        topicId: item.topic._id,
+        topicName: item.topic.name,
+        totalQuestions: 4,
+        correctAnswers: 4,
+        wrongAnswers: 0,
+        unansweredCount: 0,
+        score: item.score,
+        accuracyPercentage: item.accuracy,
+        timeTakenSeconds: item.time,
+        answersSubmitted: [],
+      });
+    }
+
+    console.log('Database Seeding Completed Successfully with Hindi C Questions!');
+    process.exit(0);
+  } catch (err) {
+    console.error('Seeding Error:', err);
+    process.exit(1);
+  }
+};
+
+seedData();
