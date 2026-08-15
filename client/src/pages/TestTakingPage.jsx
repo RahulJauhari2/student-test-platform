@@ -92,7 +92,7 @@ export default function TestTakingPage() {
       console.error('Fetch questions error:', err);
       alert('Failed to load test questions: ' + err.message);
       navigate('/');
-    } fontFinally: {
+    } finally {
       setLoading(false);
     }
   };

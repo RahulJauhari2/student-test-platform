@@ -1,5 +1,6 @@
-// Direct API connection to backend server on port 5000
-const API_BASE = 'http://localhost:5000/api';
+// Dynamic API URL for development & production hosting
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
 
 export const apiFetch = async (endpoint, options = {}) => {
   const defaultHeaders = {

@@ -418,7 +418,7 @@ export default function AdminDashboard() {
       }
     } catch (err) {
       setFormMsg({ type: 'error', text: err.message });
-    } fontFinally: {
+    } finally {
       setIsSubmitting(false);
     }
   };

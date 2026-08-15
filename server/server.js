@@ -1,68 +1,67 @@
 const express = require('express');
+const dotenv = require('dotenv');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-const dotenv = require('dotenv');
+const connectDB = require('./config/db');
+const { securityHeaders, apiLimiter, authLimiter } = require('./middleware/rateLimiter');
 
+// Load environment variables
 dotenv.config();
 
-const connectDB = require('./config/db');
-const authRoutes = require('./routes/auth');
-const testRoutes = require('./routes/tests');
-const leaderboardRoutes = require('./routes/leaderboard');
-const adminRoutes = require('./routes/admin');
-const { authLimiter, apiLimiter, securityHeaders } = require('./middleware/rateLimiter');
-
 const app = express();
-const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB
-connectDB();
+// Security and Rate Limiting Middleware
+app.use(securityHeaders);
+app.use(express.json());
+app.use(cookieParser());
+const allowedOrigins = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(',').map((url) => url.trim())
+  : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'];
 
-// Allow origins for seamless local dev & bulk API calls
 app.use(
   cors({
-    origin: true,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, or same-origin)
+      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+        return callback(null, true);
+      }
+      return callback(null, true); // Permissive CORS for hosting environments
+    },
     credentials: true,
   })
 );
 
-// Apply Security Headers & Global Rate Limiting
-app.use(securityHeaders);
-app.use('/api', apiLimiter);
+// Apply auth rate limiting specifically to auth routes, and global apiLimiter to rest
+app.use('/api/auth', authLimiter, require('./routes/auth'));
+app.use('/api/admin', apiLimiter, require('./routes/admin'));
+app.use('/api/tests', apiLimiter, require('./routes/tests'));
+app.use('/api/leaderboard', apiLimiter, require('./routes/leaderboard'));
 
-// Support large bulk JSON & CSV payloads (up to 10MB)
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(cookieParser());
+// Health check endpoint
+app.get('/', (req, res) => {
+  res.json({ success: true, message: '🚀 Student Test Platform API Backend is running.' });
+});
 
-// API Routes (Strict Auth Rate Limiter applied to Auth Endpoints)
-app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/tests', testRoutes);
-app.use('/api/leaderboard', leaderboardRoutes);
-app.use('/api/admin', adminRoutes);
-
-// Health Check
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    message: 'Student Test Platform API Server Running',
-    timestamp: new Date().toISOString(),
-  });
+// 404 Handler
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: 'Route not found' });
 });
 
 // Global Error Handler
 app.use((err, req, res, next) => {
-  console.error('Unhandled Global Error:', err.stack);
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || 'Internal Server Error',
-  });
+  console.error('Unhandled Server Error:', err);
+  res.status(500).json({ success: false, message: 'Internal Server Error: ' + err.message });
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`==================================================`);
-  console.log(`🚀 Student Test Platform Backend Server active on port ${PORT}`);
-  console.log(`🔒 Production Security & Rate Limiting Enabled`);
-  console.log(`==================================================`);
+const PORT = process.env.PORT || 5000;
+
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  });
+}).catch((err) => {
+  console.error('Failed to start server due to DB connection failure:', err);
 });
+
+module.exports = app;
+
