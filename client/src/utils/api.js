@@ -1,5 +1,6 @@
 // Dynamic API URL for development & production hosting
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 
 export const apiFetch = async (endpoint, options = {}) => {

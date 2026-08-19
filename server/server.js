@@ -1,3 +1,4 @@
+
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
@@ -10,13 +11,17 @@ dotenv.config();
 
 const app = express();
 
+// Trust proxy if running behind Nginx / Reverse Proxy on a cloud server
+app.set('trust proxy', 1);
+
 // Security and Rate Limiting Middleware
 app.use(securityHeaders);
 app.use(express.json());
 app.use(cookieParser());
+
 const allowedOrigins = process.env.CLIENT_URL
   ? process.env.CLIENT_URL.split(',').map((url) => url.trim())
-  : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'];
+  : ['http://localhost:5173', 'http://localhost:6000', 'http://127.0.0.1:5173'];
 
 app.use(
   cors({
@@ -25,7 +30,7 @@ app.use(
       if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
         return callback(null, true);
       }
-      return callback(null, true); // Permissive CORS for hosting environments
+      return callback(null, true); 
     },
     credentials: true,
   })
@@ -39,7 +44,7 @@ app.use('/api/leaderboard', apiLimiter, require('./routes/leaderboard'));
 
 // Health check endpoint
 app.get('/', (req, res) => {
-  res.json({ success: true, message: '🚀 Student Test Platform API Backend is running.' });
+  res.json({ success: true, message: 'Student Test Platform API Backend is running.' });
 });
 
 // 404 Handler
@@ -56,12 +61,11 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
   });
 }).catch((err) => {
   console.error('Failed to start server due to DB connection failure:', err);
 });
 
 module.exports = app;
-
