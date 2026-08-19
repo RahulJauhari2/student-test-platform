@@ -6,7 +6,7 @@ dotenv.config();
 const connectDB = async () => {
   try {
     // Use environment variable first, fallback to hardcoded string if needed
-    let dbUri = process.env.MONGODB_URI || 'mongodb+srv://poonamsaxena281_db_user:0S0vizvypLDztjv8@cluster0.rjueieo.mongodb.net/abvic';
+    let dbUri = process.env.MONGODB_URI;
     
     if (!dbUri) {
       console.warn('No MONGODB_URI found in environment variables.');
