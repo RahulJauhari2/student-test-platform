@@ -61,7 +61,7 @@ const createRateLimiter = ({ windowMs = 15 * 60 * 1000, max = 100, message = 'To
 // 1. Strict Auth Rate Limiter (Max 10 login/register attempts per 15 minutes)
 const authLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10,
+  max: 50,
   message: '🔒 Too many login/registration attempts from this IP address. Please wait 15 minutes before trying again.',
 });
 

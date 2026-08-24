@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_student_test_platform_key_2026';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '30d';
 
 const userSchema = new mongoose.Schema(
   {
@@ -43,6 +43,7 @@ const userSchema = new mongoose.Schema(
         'College Name is required for students',
       ],
       trim: true,
+      maxlength: 100,
       default: '',
     },
     isVerified: {
@@ -64,6 +65,10 @@ const userSchema = new mongoose.Schema(
     avatarUrl: {
       type: String,
       default: '',
+    },
+    isSuspended: {
+      type: Boolean,
+      default: false,
     },
   },
   {

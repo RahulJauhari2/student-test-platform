@@ -56,7 +56,10 @@ export default function LoginPage() {
     try {
       const res = await login(formData.email, formData.password);
       if (res.success) {
-        navigate('/');
+        const targetPath = (res.user?.role === 'admin' || res.user?.role === 'teacher') ? '/admin' : '/';
+        navigate(targetPath, { replace: true });
+      } else {
+        setServerError(res.message || 'Login failed');
       }
     } catch (err) {
       setServerError(err.message || 'Invalid login credentials');

@@ -47,6 +47,8 @@ export default function AdminDashboard() {
   // Question Search & Filter
   const [qSearch, setQSearch] = useState('');
   const [qSubjectFilter, setQSubjectFilter] = useState('');
+  const [qPage, setQPage] = useState(1);
+  const qLimit = 10;
 
   // Editing Question Modal State
   const [editingQuestion, setEditingQuestion] = useState(null);
@@ -377,6 +379,34 @@ export default function AdminDashboard() {
     }
     result.push(cur.trim());
     return result;
+  };
+
+  const handleSuspendUser = async (user) => {
+    const targetId = getCleanId(user._id || user);
+    if (!window.confirm(`Are you sure you want to toggle suspension for this user?`)) return;
+    try {
+      const res = await apiFetch(`/admin/users/${targetId}/suspend`, { method: 'PUT' });
+      if (res.success) {
+        setFormMsg({ type: 'success', text: res.message });
+        fetchAdminData();
+      }
+    } catch (err) {
+      alert('Suspend error: ' + err.message);
+    }
+  };
+
+  const handleDeleteUser = async (user) => {
+    const targetId = getCleanId(user._id || user);
+    if (!window.confirm(`Are you sure you want to completely delete this user?`)) return;
+    try {
+      const res = await apiFetch(`/admin/users/${targetId}`, { method: 'DELETE' });
+      if (res.success) {
+        setFormMsg({ type: 'success', text: res.message });
+        fetchAdminData();
+      }
+    } catch (err) {
+      alert('Delete error: ' + err.message);
+    }
   };
 
   const handleFileUpload = (e) => {
@@ -774,9 +804,18 @@ export default function AdminDashboard() {
                 No questions found. Try adding questions or changing search filters.
               </div>
             ) : (
-              filteredQuestionsList.map((q, idx) => {
-                const canEdit = canUserEditQuestion(q);
+              (() => {
+                const indexOfLastQ = qPage * qLimit;
+                const indexOfFirstQ = indexOfLastQ - qLimit;
+                const currentQuestions = filteredQuestionsList.slice(indexOfFirstQ, indexOfLastQ);
+                const totalPages = Math.ceil(filteredQuestionsList.length / qLimit);
+                
                 return (
+                  <>
+                    {currentQuestions.map((q, idx) => {
+                      const canEdit = canUserEditQuestion(q);
+                      const displayIdx = indexOfFirstQ + idx + 1;
+                      return (
                   <div key={getCleanId(q._id) || idx} className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -796,7 +835,7 @@ export default function AdminDashboard() {
                             </span>
                           )}
                         </div>
-                        <h3 className="font-bold text-white text-sm mt-1">
+                        <h3 className="font-bold text-white text-sm mt-1 whitespace-pre-wrap">
                           #{idx + 1}. {q.questionText}
                         </h3>
                       </div>
@@ -844,16 +883,16 @@ export default function AdminDashboard() {
                         return (
                           <div
                             key={optIdx}
-                            className={`p-2.5 rounded-xl text-xs flex items-center justify-between border ${
+                            className={`p-2.5 rounded-xl text-xs flex items-start justify-between border ${
                               isCorrect
                                 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold'
                                 : 'glass-card text-slate-300 border-slate-800'
                             }`}
                           >
-                            <span>
-                              <span className="font-bold mr-1.5">{String.fromCharCode(65 + optIdx)}.</span>
-                              {opt}
-                            </span>
+                            <div className="flex items-start gap-1 w-full">
+                              <span className="font-bold mr-1.5 shrink-0">{String.fromCharCode(65 + optIdx)}.</span>
+                              <span className="whitespace-pre-wrap break-words w-full">{opt}</span>
+                            </div>
                             {isCorrect && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
                           </div>
                         );
@@ -867,8 +906,34 @@ export default function AdminDashboard() {
                     )}
                   </div>
                 );
-              })
-            )}
+              })}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-4 pt-4 border-t border-slate-800">
+                  <button
+                    type="button"
+                    disabled={qPage === 1}
+                    onClick={() => setQPage((p) => Math.max(1, p - 1))}
+                    className="px-3 py-1 text-xs rounded glass-card hover:bg-slate-700 disabled:opacity-50"
+                  >
+                    Prev
+                  </button>
+                  <span className="text-xs text-slate-300">
+                    Page {qPage} of {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={qPage === totalPages}
+                    onClick={() => setQPage((p) => Math.min(totalPages, p + 1))}
+                    className="px-3 py-1 text-xs rounded glass-card hover:bg-slate-700 disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
+          );
+        })()
+      )}
           </div>
         </div>
       )}
@@ -885,29 +950,56 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {teachers.length === 0 ? (
-              <div className="col-span-2 p-8 text-center glass-panel rounded-3xl text-slate-400 text-xs">
-                No teachers registered yet.
-              </div>
-            ) : (
-              teachers.map((t) => (
-                <div key={getCleanId(t._id)} className="glass-panel p-5 rounded-3xl border border-slate-800 space-y-2 relative">
-                  <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30 flex items-center gap-1">
-                      <UserCheck className="w-3 h-3" /> Registered Faculty
-                    </span>
-                    <span className="text-[10px] text-slate-500">
-                      Joined: {new Date(t.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-
-                  <h3 className="font-extrabold text-white text-base">{t.name}</h3>
-                  <p className="text-xs text-indigo-400 font-semibold">{t.email}</p>
-                  <p className="text-xs text-slate-400">Department / College: <span className="text-white font-bold">{t.collegeName || 'Computer Science'}</span></p>
-                </div>
-              ))
-            )}
+          <div className="glass-panel rounded-3xl border border-slate-800 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-300">
+                <thead className="bg-slate-800/50 text-slate-400 font-semibold">
+                  <tr>
+                    <th className="px-4 py-3">Name</th>
+                    <th className="px-4 py-3">Email</th>
+                    <th className="px-4 py-3">Department</th>
+                    <th className="px-4 py-3">Joined Date</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/50">
+                  {teachers.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="px-4 py-8 text-center text-slate-400">
+                        No teachers registered yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    teachers.map((t) => (
+                      <tr key={getCleanId(t._id)} className="hover:bg-slate-800/30 transition-colors">
+                        <td className="px-4 py-3 font-bold text-white">{t.name}</td>
+                        <td className="px-4 py-3 text-indigo-400">{t.email}</td>
+                        <td className="px-4 py-3 text-slate-400">{t.collegeName || 'Computer Science'}</td>
+                        <td className="px-4 py-3 text-slate-500">{new Date(t.createdAt).toLocaleDateString()}</td>
+                        <td className="px-4 py-3 text-right flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleSuspendUser(t)}
+                            className={`px-2.5 py-1 rounded text-[10px] font-bold transition-colors ${
+                              t.isSuspended ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                            }`}
+                          >
+                            {t.isSuspended ? 'Unsuspend' : 'Suspend'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(t)}
+                            className="px-2.5 py-1 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[10px] font-bold border border-red-500/20 transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -924,29 +1016,56 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {students.length === 0 ? (
-              <div className="col-span-2 p-8 text-center glass-panel rounded-3xl text-slate-400 text-xs">
-                No students registered yet.
-              </div>
-            ) : (
-              students.map((st) => (
-                <div key={getCleanId(st._id)} className="glass-panel p-5 rounded-3xl border border-slate-800 space-y-2 relative">
-                  <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-bold border border-indigo-500/30 flex items-center gap-1">
-                      <GraduationCap className="w-3 h-3" /> Active Student
-                    </span>
-                    <span className="text-[10px] text-slate-500">
-                      Joined: {new Date(st.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-
-                  <h3 className="font-extrabold text-white text-base">{st.name}</h3>
-                  <p className="text-xs text-indigo-400 font-semibold">{st.email}</p>
-                  <p className="text-xs text-slate-400">College / Institution: <span className="text-white font-bold">{st.collegeName || 'Independent'}</span></p>
-                </div>
-              ))
-            )}
+          <div className="glass-panel rounded-3xl border border-slate-800 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-300">
+                <thead className="bg-slate-800/50 text-slate-400 font-semibold">
+                  <tr>
+                    <th className="px-4 py-3">Name</th>
+                    <th className="px-4 py-3">Email</th>
+                    <th className="px-4 py-3">College</th>
+                    <th className="px-4 py-3">Joined Date</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/50">
+                  {students.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="px-4 py-8 text-center text-slate-400">
+                        No students registered yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    students.map((st) => (
+                      <tr key={getCleanId(st._id)} className="hover:bg-slate-800/30 transition-colors">
+                        <td className="px-4 py-3 font-bold text-white">{st.name}</td>
+                        <td className="px-4 py-3 text-indigo-400">{st.email}</td>
+                        <td className="px-4 py-3 text-slate-400">{st.collegeName || 'Independent'}</td>
+                        <td className="px-4 py-3 text-slate-500">{new Date(st.createdAt).toLocaleDateString()}</td>
+                        <td className="px-4 py-3 text-right flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleSuspendUser(st)}
+                            className={`px-2.5 py-1 rounded text-[10px] font-bold transition-colors ${
+                              st.isSuspended ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                            }`}
+                          >
+                            {st.isSuspended ? 'Unsuspend' : 'Suspend'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(st)}
+                            className="px-2.5 py-1 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[10px] font-bold border border-red-500/20 transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

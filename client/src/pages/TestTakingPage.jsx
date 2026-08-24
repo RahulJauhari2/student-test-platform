@@ -206,7 +206,12 @@ export default function TestTakingPage() {
   }).length;
 
   return (
-    <div className="pb-24 pt-4 px-4 max-w-4xl mx-auto space-y-4">
+    <div
+      className="pb-24 pt-4 px-4 max-w-4xl mx-auto space-y-4 select-none"
+      onCopy={(e) => { e.preventDefault(); setTabWarning('Copying is disabled during the test.'); }}
+      onContextMenu={(e) => { e.preventDefault(); setTabWarning('Right-click is disabled during the test.'); }}
+      onPaste={(e) => { e.preventDefault(); setTabWarning('Pasting is disabled during the test.'); }}
+    >
       {/* Top Test Header with Live Counter Badge & Direct Submit Button */}
       <div className="glass-panel p-4 rounded-2xl sticky top-16 z-30 flex items-center justify-between border border-slate-800 shadow-xl">
         <div>
@@ -299,7 +304,7 @@ export default function TestTakingPage() {
         </div>
 
         {/* Question Text */}
-        <h3 className="text-base sm:text-lg font-bold text-white leading-relaxed">
+        <h3 className="text-base sm:text-lg font-bold text-white leading-relaxed whitespace-pre-wrap">
           {currentQ.questionText}
         </h3>
 
@@ -323,9 +328,9 @@ export default function TestTakingPage() {
                     : 'glass-card text-slate-300 hover:text-white hover:border-slate-700 border-slate-800'
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-3 w-full">
                   <span
-                    className={`w-7 h-7 rounded-xl text-xs font-bold flex items-center justify-center border ${
+                    className={`w-7 h-7 shrink-0 rounded-xl text-xs font-bold flex items-center justify-center border ${
                       isSelected
                         ? 'bg-indigo-600 text-white border-indigo-400'
                         : 'bg-slate-800 text-slate-400 border-slate-700'
@@ -333,7 +338,7 @@ export default function TestTakingPage() {
                   >
                     {String.fromCharCode(65 + optIdx)}
                   </span>
-                  <span>{opt}</span>
+                  <span className="whitespace-pre-wrap break-words w-full">{opt}</span>
                 </div>
                 {isSelected && <CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" />}
               </button>

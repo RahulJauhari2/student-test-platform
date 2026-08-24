@@ -32,6 +32,51 @@ router.get('/students', async (req, res) => {
   }
 });
 
+// PUT /api/admin/users/:id/suspend - Toggle user suspension
+router.put('/users/:id/suspend', async (req, res) => {
+  try {
+    // Only Admin can suspend users
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    const targetUser = await User.findById(req.params.id);
+    if (!targetUser) return res.status(404).json({ success: false, message: 'User not found' });
+    
+    // Prevent admin from suspending themselves
+    if (targetUser._id.toString() === req.user._id.toString()) {
+       return res.status(400).json({ success: false, message: 'Cannot suspend yourself' });
+    }
+
+    targetUser.isSuspended = !targetUser.isSuspended;
+    await targetUser.save({ validateBeforeSave: false });
+    res.json({ success: true, message: `User ${targetUser.isSuspended ? 'suspended' : 'unsuspended'} successfully!`, user: targetUser });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// DELETE /api/admin/users/:id - Delete a user
+router.delete('/users/:id', async (req, res) => {
+  try {
+    // Only Admin can delete users
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    const targetUser = await User.findById(req.params.id);
+    if (!targetUser) return res.status(404).json({ success: false, message: 'User not found' });
+    
+    if (targetUser._id.toString() === req.user._id.toString()) {
+       return res.status(400).json({ success: false, message: 'Cannot delete yourself' });
+    }
+
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'User deleted successfully!' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+
 // GET /api/admin/analytics - Class-wide Teacher Analytics & Performance Metrics Report
 router.get('/analytics', async (req, res) => {
   try {

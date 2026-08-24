@@ -19,6 +19,23 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [collegesList, setCollegesList] = useState([]);
+  const [isOtherCollege, setIsOtherCollege] = useState(false);
+
+  React.useEffect(() => {
+    const fetchColleges = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/colleges');
+        const data = await response.json();
+        if (data.success && data.colleges) {
+          setCollegesList(data.colleges);
+        }
+      } catch (err) {
+        console.error('Failed to fetch colleges', err);
+      }
+    };
+    fetchColleges();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -48,7 +65,10 @@ export default function RegisterPage() {
     try {
       const res = await register(formData);
       if (res.success) {
-        navigate('/');
+        const targetPath = (res.user?.role === 'admin' || res.user?.role === 'teacher') ? '/admin' : '/';
+        navigate(targetPath, { replace: true });
+      } else {
+        setServerError(res.message || 'Registration failed');
       }
     } catch (err) {
       setServerError(err.message || 'Registration failed');
@@ -130,17 +150,44 @@ export default function RegisterPage() {
             {formData.role === 'student' && (
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">College / Institution Name</label>
-                <div className="relative">
-                  <Building className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
-                  <input
-                    type="text"
-                    name="collegeName"
-                    value={formData.collegeName}
-                    onChange={handleChange}
-                    placeholder="e.g. MIT Boston / IIT Delhi / Stanford"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl glass-input text-sm"
-                  />
+                <div className="relative mb-2">
+                  <Building className="absolute left-3.5 top-3 w-4 h-4 text-slate-500 z-10" />
+                  <select
+                    name="selectedCollege"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setIsOtherCollege(val === 'other');
+                      if (val !== 'other') {
+                        setFormData({ ...formData, collegeName: val });
+                      } else {
+                        setFormData({ ...formData, collegeName: '' });
+                      }
+                      if (errors.collegeName) setErrors({ ...errors, collegeName: '' });
+                    }}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl glass-input text-sm appearance-none bg-slate-800/50"
+                  >
+                    <option value="">Select your college</option>
+                    {collegesList.map((college, idx) => (
+                      <option key={idx} value={college}>
+                        {college}
+                      </option>
+                    ))}
+                    <option value="other">Other (Type new)</option>
+                  </select>
                 </div>
+                {isOtherCollege && (
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="collegeName"
+                      maxLength={100}
+                      value={formData.collegeName}
+                      onChange={handleChange}
+                      placeholder="Type your college name"
+                      className="w-full px-4 py-2.5 rounded-xl glass-input text-sm mt-2"
+                    />
+                  </div>
+                )}
                 {errors.collegeName && <p className="text-xs text-red-400 mt-1">{errors.collegeName}</p>}
               </div>
             )}

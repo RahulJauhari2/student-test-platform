@@ -33,6 +33,7 @@ app.use(
 
 // Apply auth rate limiting specifically to auth routes, and global apiLimiter to rest
 app.use('/api/auth', authLimiter, require('./routes/auth'));
+app.use('/api/colleges', apiLimiter, require('./routes/colleges'));
 app.use('/api/admin', apiLimiter, require('./routes/admin'));
 app.use('/api/tests', apiLimiter, require('./routes/tests'));
 app.use('/api/leaderboard', apiLimiter, require('./routes/leaderboard'));

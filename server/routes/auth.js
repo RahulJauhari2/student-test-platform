@@ -25,6 +25,13 @@ router.post('/register', validateBody(registerSchema), async (req, res) => {
       });
     }
 
+    if (role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Registration as admin is not permitted.',
+      });
+    }
+
     const verificationToken = crypto.randomBytes(20).toString('hex');
 
     const user = await User.create({
@@ -54,6 +61,13 @@ router.post('/login', validateBody(loginSchema), async (req, res) => {
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials. User not found.',
+      });
+    }
+
+    if (user.isSuspended) {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been suspended. Contact an administrator.',
       });
     }
 

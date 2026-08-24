@@ -5,7 +5,7 @@ export const clientRegisterSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   role: z.enum(['admin', 'teacher', 'student']),
-  collegeName: z.string().optional(),
+  collegeName: z.string().max(100, 'College name cannot exceed 100 characters').optional(),
 }).refine(
   (data) => {
     if (data.role === 'student') {
