@@ -184,7 +184,7 @@ input, select, textarea {
 
 .mt-0\.5 { margin-top: 0.125rem; }
 .mt-1 { margin-top: 0.25rem; }
-.mt-[2px] { margin-top: 2px; }
+.mt-\[2px\] { margin-top: 2px; }
 .mt-2 { margin-top: 0.5rem; }
 .mt-3 { margin-top: 0.75rem; }
 .mt-4 { margin-top: 1rem; }
@@ -274,8 +274,8 @@ input, select, textarea {
 .text-center { text-align: center; }
 .text-left { text-align: left; }
 .text-right { text-align: right; }
-.text-[10px] { font-size: 10px; }
-.text-[11px] { font-size: 11px; }
+.text-\[10px\] { font-size: 10px; }
+.text-\[11px\] { font-size: 11px; }
 .text-xs { font-size: 0.75rem; line-height: 1rem; }
 .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
 .text-base { font-size: 1rem; line-height: 1.5rem; }
