@@ -13,7 +13,7 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 glass-panel border-b border-slate-800 px-4 py-3">
+    <header className="sticky top-0 z-40 glass-panel border-b border-slate-800 px-4 py-3 print:hidden">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 group">

@@ -76,6 +76,32 @@ router.delete('/users/:id', async (req, res) => {
   }
 });
 
+// PUT /api/admin/users/:id/role - Change user role
+router.put('/users/:id/role', async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    const { role } = req.body;
+    if (!['student', 'teacher', 'admin'].includes(role)) {
+      return res.status(400).json({ success: false, message: 'Invalid role' });
+    }
+
+    const targetUser = await User.findById(req.params.id);
+    if (!targetUser) return res.status(404).json({ success: false, message: 'User not found' });
+    
+    if (targetUser._id.toString() === req.user._id.toString()) {
+       return res.status(400).json({ success: false, message: 'Cannot change your own role' });
+    }
+
+    targetUser.role = role;
+    await targetUser.save({ validateBeforeSave: false });
+    res.json({ success: true, message: `User role updated to ${role} successfully!`, user: targetUser });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 
 // GET /api/admin/analytics - Class-wide Teacher Analytics & Performance Metrics Report
 router.get('/analytics', async (req, res) => {

@@ -409,6 +409,23 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleChangeRole = async (user, newRole) => {
+    const targetId = getCleanId(user._id || user);
+    if (!window.confirm(`Are you sure you want to make this user a ${newRole}?`)) return;
+    try {
+      const res = await apiFetch(`/admin/users/${targetId}/role`, { 
+        method: 'PUT',
+        body: { role: newRole } 
+      });
+      if (res.success) {
+        setFormMsg({ type: 'success', text: res.message });
+        fetchAdminData();
+      }
+    } catch (err) {
+      alert('Role change error: ' + err.message);
+    }
+  };
+
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -520,178 +537,138 @@ export default function AdminDashboard() {
   });
 
   return (
-    <div className="pb-24 pt-4 px-4 max-w-5xl mx-auto space-y-6">
-      {/* Header Banner */}
-      <div className="glass-panel p-6 rounded-3xl border border-emerald-500/20 shadow-2xl">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
-              <Shield className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">
-                {isTeacher ? '👨‍🏫 Faculty Teacher Portal' : '🛡️ Master Admin Portal'}
-              </h1>
-              <p className="text-xs text-slate-400">
-                {isTeacher
-                  ? `Welcome Prof. ${user?.name || ''} — Manage your questions, tests & topics`
-                  : 'Full System Administration & User Management Portal'}
-              </p>
-            </div>
+    <div className="flex flex-col md:flex-row min-h-sidebar w-full relative items-start">
+      
+      {/* SIDEBAR NAVIGATION */}
+      <div className="w-full md:w-72 shrink-0 bg-slate-900 border-r border-slate-800 p-4 flex flex-col gap-4 md:sticky md:top-16 md:h-sidebar overflow-y-auto">
+        
+        {/* Profile Card */}
+        <div className="glass-panel p-5 rounded-3xl border border-emerald-500/20 shadow-2xl flex flex-col items-center text-center">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/30 to-teal-600/30 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mb-3">
+            <Shield className="w-7 h-7" />
           </div>
-
-          <button
-            type="button"
-            onClick={handleExportCSVResults}
-            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
-          >
-            <Download className="w-4 h-4" /> Export Grade Report (CSV)
-          </button>
+          <h1 className="text-lg font-black text-white leading-tight">
+            {isTeacher ? 'Faculty Portal' : 'Admin Portal'}
+          </h1>
+          <p className="text-xs text-emerald-400 font-semibold mt-1">
+            {isTeacher ? `Prof. ${user?.name || ''}` : 'System Administrator'}
+          </p>
         </div>
 
-        {/* Interactive Clickable Stats Grid */}
-        {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-4 pt-4 border-t border-slate-800">
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={() => setActiveTab('teachers')}
-                className="glass-card p-3 rounded-2xl text-left hover:border-emerald-500/50 cursor-pointer transition-all"
-              >
-                <div className="text-xs text-slate-400 font-semibold flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5 text-emerald-400" /> Teachers
-                </div>
-                <div className="text-xl font-black text-emerald-400">{stats.totalTeachers}</div>
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('students')}
-              className="glass-card p-3 rounded-2xl text-left hover:border-indigo-500/50 cursor-pointer transition-all"
-            >
-              <div className="text-xs text-slate-400 font-semibold flex items-center gap-1">
-                <GraduationCap className="w-3.5 h-3.5 text-indigo-400" /> Students
-              </div>
-              <div className="text-xl font-black text-indigo-400">{stats.totalStudents}</div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('subject')}
-              className="glass-card p-3 rounded-2xl text-left hover:border-purple-500/50 cursor-pointer transition-all"
-            >
-              <div className="text-xs text-slate-400 font-semibold">Subjects</div>
-              <div className="text-xl font-black text-purple-400">{stats.totalSubjects}</div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('manage_questions')}
-              className="glass-card p-3 rounded-2xl text-left hover:border-emerald-500/50 cursor-pointer transition-all"
-            >
-              <div className="text-xs text-slate-400 font-semibold">
-                {isTeacher ? 'My Questions' : 'Questions'}
-              </div>
-              <div className="text-xl font-black text-emerald-400">{allQuestions.length}</div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('analytics')}
-              className="glass-card p-3 rounded-2xl text-left hover:border-amber-500/50 cursor-pointer transition-all"
-            >
-              <div className="text-xs text-slate-400 font-semibold">Tests Taken</div>
-              <div className="text-xl font-black text-amber-400">{stats.totalTestsTaken}</div>
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Role-tailored Action Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto scrollbar-none">
-        <button
-          type="button"
-          onClick={() => { setActiveTab('analytics'); setFormMsg({ type: '', text: '' }); }}
-          className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-            activeTab === 'analytics' ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/20' : 'glass-card text-amber-400'
-          }`}
-        >
-          <BarChart2 className="w-4 h-4" /> Class Analytics Report
-        </button>
-
-        <button
-          type="button"
-          onClick={() => { setActiveTab('manage_questions'); setFormMsg({ type: '', text: '' }); }}
-          className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-            activeTab === 'manage_questions' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'glass-card text-slate-400'
-          }`}
-        >
-          <HelpCircle className="w-4 h-4" /> {isTeacher ? `My Questions (${allQuestions.length})` : `Manage Questions (${allQuestions.length})`}
-        </button>
-
-        {isAdmin && (
+        {/* Navigation Links */}
+        <div className="flex flex-col gap-1 mt-2">
           <button
             type="button"
-            onClick={() => { setActiveTab('teachers'); setFormMsg({ type: '', text: '' }); }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-              activeTab === 'teachers' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'glass-card text-emerald-400'
+            onClick={() => { setActiveTab('analytics'); setFormMsg({ type: '', text: '' }); }}
+            className={`px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center gap-3 ${
+              activeTab === 'analytics' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
             }`}
           >
-            <UserCheck className="w-4 h-4" /> Teachers ({teachers.length})
+            <BarChart2 className="w-4 h-4" /> Class Analytics
           </button>
-        )}
+          
+          <button
+            type="button"
+            onClick={() => { setActiveTab('manage_questions'); setFormMsg({ type: '', text: '' }); }}
+            className={`px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center gap-3 ${
+              activeTab === 'manage_questions' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+            }`}
+          >
+            <HelpCircle className="w-4 h-4" /> {isTeacher ? `My Questions (${allQuestions.length})` : `Manage Questions (${allQuestions.length})`}
+          </button>
 
-        <button
-          type="button"
-          onClick={() => { setActiveTab('students'); setFormMsg({ type: '', text: '' }); }}
-          className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-            activeTab === 'students' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'glass-card text-indigo-400'
-          }`}
-        >
-          <GraduationCap className="w-4 h-4" /> Students ({students.length})
-        </button>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => { setActiveTab('teachers'); setFormMsg({ type: '', text: '' }); }}
+              className={`px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center gap-3 ${
+                activeTab === 'teachers' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+              }`}
+            >
+              <UserCheck className="w-4 h-4" /> Teachers ({teachers.length})
+            </button>
+          )}
 
-        <button
-          type="button"
-          onClick={() => { setActiveTab('question'); setFormMsg({ type: '', text: '' }); }}
-          className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-            activeTab === 'question' ? 'bg-indigo-600 text-white' : 'glass-card text-slate-400'
-          }`}
-        >
-          ➕ Add Question
-        </button>
+          <button
+            type="button"
+            onClick={() => { setActiveTab('students'); setFormMsg({ type: '', text: '' }); }}
+            className={`px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center gap-3 ${
+              activeTab === 'students' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+            }`}
+          >
+            <GraduationCap className="w-4 h-4" /> Students ({students.length})
+          </button>
 
-        <button
-          type="button"
-          onClick={() => { setActiveTab('bulk'); setFormMsg({ type: '', text: '' }); }}
-          className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-            activeTab === 'bulk' ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20' : 'glass-card text-emerald-400'
-          }`}
-        >
-          <FileSpreadsheet className="w-4 h-4" /> Bulk CSV/JSON Upload
-        </button>
+          <div className="h-px bg-slate-800 my-2"></div>
 
-        <button
-          type="button"
-          onClick={() => { setActiveTab('topic'); setFormMsg({ type: '', text: '' }); }}
-          className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-            activeTab === 'topic' ? 'bg-indigo-600 text-white' : 'glass-card text-slate-400'
-          }`}
-        >
-          📁 Add Topic
-        </button>
+          <button
+            type="button"
+            onClick={() => { setActiveTab('question'); setFormMsg({ type: '', text: '' }); }}
+            className={`px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center gap-3 ${
+              activeTab === 'question' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+            }`}
+          >
+            ➕ Add Question
+          </button>
 
-        <button
-          type="button"
-          onClick={() => { setActiveTab('subject'); setFormMsg({ type: '', text: '' }); }}
-          className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-            activeTab === 'subject' ? 'bg-indigo-600 text-white' : 'glass-card text-slate-400'
-          }`}
-        >
-          📚 Add Subject
-        </button>
+          <button
+            type="button"
+            onClick={() => { setActiveTab('bulk'); setFormMsg({ type: '', text: '' }); }}
+            className={`px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center gap-3 ${
+              activeTab === 'bulk' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+            }`}
+          >
+            <FileSpreadsheet className="w-4 h-4" /> Bulk Upload
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setActiveTab('topic'); setFormMsg({ type: '', text: '' }); }}
+            className={`px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center gap-3 ${
+              activeTab === 'topic' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+            }`}
+          >
+            📁 Add Topic
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setActiveTab('subject'); setFormMsg({ type: '', text: '' }); }}
+            className={`px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center gap-3 ${
+              activeTab === 'subject' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+            }`}
+          >
+            📚 Add Subject
+          </button>
+        </div>
       </div>
+
+      {/* MAIN CONTENT AREA */}
+      <div className="flex-1 min-w-0 space-y-6 p-4 md:p-8 pb-24">
+        
+        {/* Quick Stats Banner (always visible on top) */}
+        {stats && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {isAdmin && (
+              <div className="glass-panel p-4 rounded-3xl border border-emerald-500/20 flex flex-col justify-center">
+                <span className="text-xs text-slate-400 font-semibold mb-1">Teachers</span>
+                <span className="text-2xl font-black text-emerald-400">{stats.totalTeachers}</span>
+              </div>
+            )}
+            <div className="glass-panel p-4 rounded-3xl border border-indigo-500/20 flex flex-col justify-center">
+              <span className="text-xs text-slate-400 font-semibold mb-1">Students</span>
+              <span className="text-2xl font-black text-indigo-400">{stats.totalStudents}</span>
+            </div>
+            <div className="glass-panel p-4 rounded-3xl border border-purple-500/20 flex flex-col justify-center">
+              <span className="text-xs text-slate-400 font-semibold mb-1">Subjects</span>
+              <span className="text-2xl font-black text-purple-400">{stats.totalSubjects}</span>
+            </div>
+            <div className="glass-panel p-4 rounded-3xl border border-amber-500/20 flex flex-col justify-center">
+              <span className="text-xs text-slate-400 font-semibold mb-1">Tests Taken</span>
+              <span className="text-2xl font-black text-amber-400">{stats.totalTestsTaken}</span>
+            </div>
+          </div>
+        )}
 
       {/* Feedback Message */}
       {formMsg.text && (
@@ -835,8 +812,8 @@ export default function AdminDashboard() {
                             </span>
                           )}
                         </div>
-                        <h3 className="font-bold text-white text-sm mt-1 whitespace-pre-wrap">
-                          #{idx + 1}. {q.questionText}
+                        <h3 className="font-bold text-white text-sm mt-1 whitespace-pre-wrap break-words">
+                          #{idx + 1}. {q.questionText.replace(/\\n/g, '\n')}
                         </h3>
                       </div>
 
@@ -891,7 +868,7 @@ export default function AdminDashboard() {
                           >
                             <div className="flex items-start gap-1 w-full">
                               <span className="font-bold mr-1.5 shrink-0">{String.fromCharCode(65 + optIdx)}.</span>
-                              <span className="whitespace-pre-wrap break-words w-full">{opt}</span>
+                              <span className="whitespace-pre-wrap break-words w-full">{opt.replace(/\\n/g, '\n')}</span>
                             </div>
                             {isCorrect && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
                           </div>
@@ -979,6 +956,22 @@ export default function AdminDashboard() {
                         <td className="px-4 py-3 text-right flex justify-end gap-2">
                           <button
                             type="button"
+                            onClick={() => handleChangeRole(t, 'admin')}
+                            className="px-2.5 py-1 rounded bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 text-[10px] font-bold border border-purple-500/20 transition-colors"
+                            title="Make Admin"
+                          >
+                            +Admin
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleChangeRole(t, 'student')}
+                            className="px-2.5 py-1 rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-[10px] font-bold border border-indigo-500/20 transition-colors"
+                            title="Make Student"
+                          >
+                            -Student
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => handleSuspendUser(t)}
                             className={`px-2.5 py-1 rounded text-[10px] font-bold transition-colors ${
                               t.isSuspended ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
@@ -1043,6 +1036,22 @@ export default function AdminDashboard() {
                         <td className="px-4 py-3 text-slate-400">{st.collegeName || 'Independent'}</td>
                         <td className="px-4 py-3 text-slate-500">{new Date(st.createdAt).toLocaleDateString()}</td>
                         <td className="px-4 py-3 text-right flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleChangeRole(st, 'admin')}
+                            className="px-2.5 py-1 rounded bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 text-[10px] font-bold border border-purple-500/20 transition-colors"
+                            title="Make Admin"
+                          >
+                            +Admin
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleChangeRole(st, 'teacher')}
+                            className="px-2.5 py-1 rounded bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 text-[10px] font-bold border border-teal-500/20 transition-colors"
+                            title="Make Teacher"
+                          >
+                            +Teacher
+                          </button>
                           <button
                             type="button"
                             onClick={() => handleSuspendUser(st)}
@@ -1600,6 +1609,7 @@ export default function AdminDashboard() {
           </button>
         </form>
       )}
+      </div>
     </div>
   );
 }

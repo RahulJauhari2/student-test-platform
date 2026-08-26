@@ -78,9 +78,11 @@ export default function TestResultPage() {
   const isEligibleForCertificate = result.accuracyPercentage >= 60;
 
   return (
-    <div className="pb-24 pt-4 px-4 max-w-4xl mx-auto space-y-6">
-      {/* Performance Overview Banner */}
-      <div className="glass-panel p-6 rounded-3xl text-center relative overflow-hidden border border-indigo-500/20 shadow-2xl print:hidden">
+    <>
+      {/* SCORECARD CONTENT WRAPPER */}
+      <div className={`pb-24 pt-4 px-4 max-w-4xl mx-auto space-y-6 ${showCertificateModal ? 'print:hidden' : ''}`}>
+        {/* Performance Overview Banner */}
+        <div className="glass-panel p-6 rounded-3xl text-center relative overflow-hidden border border-indigo-500/20 shadow-2xl">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-400 via-orange-500 to-red-500 shadow-xl shadow-amber-500/30 mb-3">
           <Trophy className="w-8 h-8 text-white" />
         </div>
@@ -123,7 +125,7 @@ export default function TestResultPage() {
         </div>
 
         {/* Action buttons */}
-        <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
+        <div className="flex flex-wrap items-center justify-center gap-3 mt-6 print:hidden">
           {isEligibleForCertificate && (
             <button
               onClick={() => setShowCertificateModal(true)}
@@ -156,75 +158,8 @@ export default function TestResultPage() {
         </div>
       </div>
 
-      {/* PRINTABLE CERTIFICATE MODAL / VIEW */}
-      {(showCertificateModal || Boolean(window.matchMedia && window.matchMedia('print').matches)) && (
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="relative max-w-2xl w-full bg-gradient-to-b from-slate-900 via-slate-950 to-indigo-950 p-8 rounded-3xl border-4 border-amber-500/60 shadow-2xl text-center space-y-6 print:fixed print:inset-0 print:border-8 print:border-black print:bg-white print:text-black">
-            <button
-              onClick={() => setShowCertificateModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-xl glass-card text-slate-400 hover:text-white print:hidden"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {/* Certificate Watermark & Header */}
-            <div className="flex items-center justify-center gap-2">
-              <Award className="w-12 h-12 text-amber-400" />
-            </div>
-
-            <div>
-              <span className="text-xs font-black uppercase tracking-widest text-amber-400">
-                Official Certificate of Achievement
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-serif font-bold text-white mt-1">
-                EduRank Assessment Platform
-              </h2>
-            </div>
-
-            <div className="space-y-2 py-2 border-y border-amber-500/30">
-              <p className="text-xs text-slate-400">This is to certify that</p>
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-amber-300 tracking-wide">
-                {result.studentName}
-              </h3>
-              <p className="text-xs text-slate-300">
-                representing <span className="font-bold text-white">{result.collegeName}</span>
-              </p>
-              <p className="text-xs text-slate-400 pt-2">
-                has successfully completed the official examination in
-              </p>
-              <p className="text-base font-bold text-indigo-300">
-                {result.subjectName} — {result.topicName}
-              </p>
-              <p className="text-xs text-slate-300">
-                with an overall score of <span className="font-extrabold text-emerald-400">{result.score} Points</span> ({result.accuracyPercentage}% Accuracy)
-              </p>
-            </div>
-
-            <div className="flex items-center justify-between text-left text-xs text-slate-400 pt-4">
-              <div>
-                <p className="font-bold text-slate-200">Date Issued:</p>
-                <p>{new Date(result.createdAt).toLocaleDateString()}</p>
-              </div>
-              <div className="text-right">
-                <p className="font-bold text-emerald-400">Verification ID:</p>
-                <p className="font-mono text-[10px] text-slate-400">{result._id}</p>
-              </div>
-            </div>
-
-            <div className="pt-4 flex items-center justify-center gap-3 print:hidden">
-              <button
-                onClick={handlePrint}
-                className="px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs flex items-center gap-2 shadow-lg shadow-amber-500/30 transition-all cursor-pointer"
-              >
-                <Printer className="w-4 h-4" /> Download / Print PDF Certificate
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Instant Solution Explanations Section */}
-      <div className="space-y-4 print:hidden">
+      <div className="space-y-4">
         <h2 className="text-lg font-bold text-white flex items-center gap-2">
           <BookOpen className="w-5 h-5 text-indigo-400" /> Question-by-Question Solution Explanations
         </h2>
@@ -252,7 +187,9 @@ export default function TestResultPage() {
                 )}
               </div>
 
-              <h3 className="font-bold text-sm text-white mb-3">{item.questionText}</h3>
+              <h3 className="font-bold text-sm text-white mb-3 whitespace-pre-wrap break-words">
+                {item.questionText?.replace(/\\n/g, '\n')}
+              </h3>
 
               {/* Options Breakdown */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
@@ -269,9 +206,9 @@ export default function TestResultPage() {
 
                   return (
                     <div key={optIdx} className={`p-3 rounded-xl text-xs flex items-center justify-between border ${borderStyle}`}>
-                      <span>
-                        <span className="font-bold mr-2">{String.fromCharCode(65 + optIdx)}.</span>
-                        {opt}
+                      <span className="whitespace-pre-wrap break-words">
+                        <span className="font-bold mr-2 shrink-0">{String.fromCharCode(65 + optIdx)}.</span>
+                        {opt?.replace(/\\n/g, '\n')}
                       </span>
                       {isCorrectAnswer && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
                     </div>
@@ -291,5 +228,80 @@ export default function TestResultPage() {
         </div>
       </div>
     </div>
+
+    {/* PRINTABLE CERTIFICATE MODAL / VIEW */}
+    {showCertificateModal && (
+      <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto print:bg-transparent print:p-0">
+        <div className="relative max-w-2xl w-full bg-gradient-to-b from-slate-900 via-slate-950 to-indigo-950 p-8 rounded-3xl border-4 border-amber-500/60 shadow-2xl text-center space-y-6 print:fixed print:inset-0 print:border-8 print:border-black print:bg-white print:bg-none print:text-black">
+          <button
+            onClick={() => setShowCertificateModal(false)}
+            className="absolute top-4 right-4 p-2 rounded-xl glass-card text-slate-400 hover:text-white print:hidden"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          {/* Certificate Watermark & Header */}
+          <div className="flex items-center justify-center gap-2">
+            <Award className="w-12 h-12 text-amber-400" />
+          </div>
+
+          <div>
+            <span className="text-xs font-black uppercase tracking-widest text-amber-400">
+              Official Certificate of Achievement
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-white mt-1">
+              EduRank Assessment Platform
+            </h2>
+          </div>
+
+          <div className="space-y-2 py-2 border-y border-amber-500/30 print:border-black">
+            <p className="text-xs text-slate-400">This is to certify that</p>
+            <h3 className="text-2xl sm:text-3xl font-extrabold text-amber-300 tracking-wide">
+              {result.studentName}
+            </h3>
+            <p className="text-xs text-slate-300">
+              representing <span className="font-bold text-white">{result.collegeName}</span>
+            </p>
+            <p className="text-xs text-slate-400 pt-2">
+              has successfully completed the official examination in
+            </p>
+            <p className="text-base font-bold text-indigo-300">
+              {result.subjectName} — {result.topicName}
+            </p>
+            <p className="text-xs text-slate-300">
+              with an overall score of <span className="font-extrabold text-emerald-400">{result.score} Points</span> ({result.accuracyPercentage}% Accuracy)
+            </p>
+          </div>
+
+          <div className="flex items-end justify-between text-left text-xs text-slate-400 pt-8 border-t border-amber-500/20 print:border-black mt-4">
+            <div>
+              <p className="font-bold text-slate-200">Date Issued:</p>
+              <p>{new Date(result.createdAt).toLocaleDateString()}</p>
+              <div className="mt-4">
+                <p className="font-bold text-emerald-400">Verification ID:</p>
+                <p className="font-mono text-[10px] text-slate-400">{result._id}</p>
+              </div>
+            </div>
+            
+            {/* Instructor Signature Block */}
+            <div className="text-center pb-1">
+              <div className="w-40 border-b border-slate-400 print:border-black mx-auto mb-2"></div>
+              <p className="font-bold text-slate-200 text-sm">Instructor's Signature</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">EduRank Official</p>
+            </div>
+          </div>
+
+          <div className="pt-4 flex items-center justify-center gap-3 print:hidden">
+            <button
+              onClick={handlePrint}
+              className="px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs flex items-center gap-2 shadow-lg shadow-amber-500/30 transition-all cursor-pointer"
+            >
+              <Printer className="w-4 h-4" /> Download / Print PDF Certificate
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

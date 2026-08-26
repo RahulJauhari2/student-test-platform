@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
-import { Clock, AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Send, HelpCircle, Check, ShieldAlert, X } from 'lucide-react';
+import { Clock, AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Send, HelpCircle, Check, ShieldAlert, X, Copy } from 'lucide-react';
 
 export default function TestTakingPage() {
   const { topicId } = useParams();
@@ -19,6 +19,7 @@ export default function TestTakingPage() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   // Anti-Cheating Tab Switch State
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
@@ -303,10 +304,54 @@ export default function TestTakingPage() {
           </span>
         </div>
 
-        {/* Question Text */}
-        <h3 className="text-base sm:text-lg font-bold text-white leading-relaxed whitespace-pre-wrap">
-          {currentQ.questionText}
-        </h3>
+        {/* Question Text with Copy Button */}
+        <div className="relative group bg-slate-900/50 p-4 rounded-2xl border border-slate-800">
+          <button
+            type="button"
+            onClick={() => {
+              const textToCopy = currentQ.questionText.replace(/\\n/g, '\n');
+              
+              const handleSuccess = () => {
+                setIsCopied(true);
+                setTimeout(() => setIsCopied(false), 2000);
+              };
+
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(textToCopy)
+                  .then(handleSuccess)
+                  .catch(err => console.error("Clipboard API failed", err));
+              } else {
+                // Fallback for non-secure contexts (e.g., HTTP over LAN)
+                const textArea = document.createElement("textarea");
+                textArea.value = textToCopy;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                  document.execCommand('copy');
+                  handleSuccess();
+                } catch (err) {
+                  console.error("Fallback copy failed", err);
+                }
+                document.body.removeChild(textArea);
+              }
+            }}
+            className={`absolute top-3 right-3 p-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+              isCopied 
+                ? 'bg-emerald-600 text-white opacity-100' 
+                : 'bg-slate-800/80 hover:bg-indigo-600 text-slate-400 hover:text-white opacity-0 group-hover:opacity-100'
+            }`}
+            title="Copy Code/Question"
+          >
+            {isCopied ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            <span className="text-[10px] font-bold uppercase tracking-wider">
+              {isCopied ? 'Copied!' : 'Copy'}
+            </span>
+          </button>
+          
+          <h3 className="text-base sm:text-lg font-bold text-white leading-relaxed whitespace-pre-wrap break-words pr-12 font-mono text-sm">
+            {currentQ.questionText.replace(/\\n/g, '\n')}
+          </h3>
+        </div>
 
         {/* Ergonomic Touch Options List */}
         <div className="space-y-3 pt-2">
@@ -338,7 +383,7 @@ export default function TestTakingPage() {
                   >
                     {String.fromCharCode(65 + optIdx)}
                   </span>
-                  <span className="whitespace-pre-wrap break-words w-full">{opt}</span>
+                  <span className="whitespace-pre-wrap break-words w-full">{opt.replace(/\\n/g, '\n')}</span>
                 </div>
                 {isSelected && <CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" />}
               </button>
