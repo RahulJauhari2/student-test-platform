@@ -58,17 +58,17 @@ const createRateLimiter = ({ windowMs = 15 * 60 * 1000, max = 100, message = 'To
   };
 };
 
-// 1. Strict Auth Rate Limiter (Max 10 login/register attempts per 15 minutes)
+// 1. Strict Auth Rate Limiter (Max 200 login/register attempts per 15 minutes)
 const authLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50,
+  max: 200,
   message: '🔒 Too many login/registration attempts from this IP address. Please wait 15 minutes before trying again.',
 });
 
-// 2. Global API Rate Limiter (Max 300 requests per 15 minutes)
+// 2. Global API Rate Limiter (Max 1000 requests per 15 minutes)
 const apiLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 300,
+  max: 1000,
   message: '⚠️ High traffic volume detected. Please wait a few moments before sending more requests.',
 });
 

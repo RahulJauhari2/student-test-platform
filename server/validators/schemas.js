@@ -14,8 +14,8 @@ const registerSchema = z.object({
   password: z
     .string({ required_error: 'Password is required' })
     .min(6, 'Password must be at least 6 characters'),
-  role: z.enum(['admin', 'teacher', 'student'], {
-    errorMap: () => ({ message: 'Role must be admin, teacher, or student' }),
+  role: z.enum(['teacher', 'student'], {
+    errorMap: () => ({ message: 'Role must be teacher or student' }),
   }),
   collegeName: z.string().trim().optional(),
 }).refine(

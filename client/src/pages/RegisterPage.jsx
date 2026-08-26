@@ -97,8 +97,8 @@ export default function RegisterPage() {
             {/* Role Selection Pills */}
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-2">Select Account Role</label>
-              <div className="grid grid-cols-3 gap-2">
-                {['student', 'teacher', 'admin'].map((roleType) => (
+              <div className="grid grid-cols-2 gap-2">
+                {['student', 'teacher'].map((roleType) => (
                   <button
                     key={roleType}
                     type="button"
