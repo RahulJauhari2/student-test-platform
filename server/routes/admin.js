@@ -243,6 +243,81 @@ router.delete('/questions/:id', async (req, res) => {
   }
 });
 
+// DELETE /api/admin/questions/bulk-delete - Bulk delete multiple questions by IDs
+router.delete('/questions/bulk-delete', async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Only admins can bulk delete questions.' });
+    }
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'No question IDs provided.' });
+    }
+
+    // Get all questions to be deleted so we can update topic counts
+    const questionsToDelete = await Question.find({ _id: { $in: ids } }).lean();
+
+    // Count per topic for decrement
+    const countsByTopic = {};
+    questionsToDelete.forEach((q) => {
+      const tid = q.topicId?.toString();
+      if (tid) countsByTopic[tid] = (countsByTopic[tid] || 0) + 1;
+    });
+
+    await Question.deleteMany({ _id: { $in: ids } });
+
+    for (const [topId, count] of Object.entries(countsByTopic)) {
+      await Topic.findByIdAndUpdate(topId, { $inc: { questionCount: -count } });
+    }
+
+    res.json({ success: true, message: `Successfully deleted ${questionsToDelete.length} questions.` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// DELETE /api/admin/subjects/:id - Delete a subject and all its topics & questions (admin only)
+router.delete('/subjects/:id', async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Only admins can delete subjects.' });
+    }
+    const subject = await Subject.findById(req.params.id);
+    if (!subject) return res.status(404).json({ success: false, message: 'Subject not found.' });
+
+    // Delete all questions for this subject
+    await Question.deleteMany({ subjectId: req.params.id });
+    // Delete all topics for this subject
+    await Topic.deleteMany({ subjectId: req.params.id });
+    // Delete the subject itself
+    await Subject.findByIdAndDelete(req.params.id);
+
+    res.json({ success: true, message: `Subject "${subject.name}" and all its topics & questions deleted.` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// DELETE /api/admin/topics/:id - Delete a topic and all its questions (admin only)
+router.delete('/topics/:id', async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Only admins can delete topics.' });
+    }
+    const topic = await Topic.findById(req.params.id);
+    if (!topic) return res.status(404).json({ success: false, message: 'Topic not found.' });
+
+    // Delete all questions for this topic
+    await Question.deleteMany({ topicId: req.params.id });
+    // Delete the topic itself
+    await Topic.findByIdAndDelete(req.params.id);
+
+    res.json({ success: true, message: `Topic "${topic.name}" and all its questions deleted.` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // POST /api/admin/questions/bulk - Bulk Upload Questions with createdBy tracking
 router.post(
   '/questions/bulk',

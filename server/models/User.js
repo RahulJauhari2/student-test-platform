@@ -46,6 +46,11 @@ const userSchema = new mongoose.Schema(
       maxlength: 100,
       default: '',
     },
+    xp: { type: Number, default: 0 },
+    level: { type: Number, default: 1 },
+    streak: { type: Number, default: 0 },
+    lastActiveDate: { type: String, default: '' }, // stored as 'YYYY-MM-DD'
+    badges: { type: [String], default: [] },
     isVerified: {
       type: Boolean,
       default: true,

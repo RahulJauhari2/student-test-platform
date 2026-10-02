@@ -5,6 +5,7 @@ const Subject = require('../models/Subject');
 const Topic = require('../models/Topic');
 const Question = require('../models/Question');
 const TestResult = require('../models/TestResult');
+const User = require('../models/User');
 const { requireAuth } = require('../middleware/auth');
 const { validateBody } = require('../middleware/validate');
 const { testSubmissionSchema } = require('../validators/schemas');
@@ -146,7 +147,7 @@ router.post('/submit', requireAuth, validateBody(testSubmissionSchema), async (r
     const score = Math.max(0, correctAnswers * 10 - wrongAnswers * 2);
     const accuracyPercentage = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
 
-    const testResult = await TestResult.create({
+    const savedResult = await TestResult.create({
       studentId: req.user._id,
       studentName: req.user.name,
       collegeName: req.user.collegeName || 'Independent',
@@ -164,13 +165,101 @@ router.post('/submit', requireAuth, validateBody(testSubmissionSchema), async (r
       answersSubmitted: processedAnswers,
     });
 
+    // Award XP and update streak for student
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const student = await User.findById(req.user._id);
+      if (student && student.role === 'student') {
+        // XP: 10 base + bonus for accuracy
+        const xpEarned = 10 + Math.floor((savedResult.accuracyPercentage || 0) / 10) * 5;
+        student.xp = (student.xp || 0) + xpEarned;
+        student.level = Math.floor(student.xp / 100) + 1;
+
+        // Streak logic
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().slice(0, 10);
+        if (student.lastActiveDate === yesterdayStr) {
+          student.streak = (student.streak || 0) + 1;
+        } else if (student.lastActiveDate !== today) {
+          student.streak = 1;
+        }
+        student.lastActiveDate = today;
+
+        // Badge logic
+        const badges = student.badges || [];
+        if (!badges.includes('first_test')) badges.push('first_test');
+        if (savedResult.accuracyPercentage >= 100 && !badges.includes('perfect_score')) badges.push('perfect_score');
+        if (student.streak >= 7 && !badges.includes('week_streak')) badges.push('week_streak');
+        if (student.streak >= 30 && !badges.includes('month_streak')) badges.push('month_streak');
+        if (student.xp >= 500 && !badges.includes('xp_500')) badges.push('xp_500');
+        student.badges = badges;
+
+        await student.save({ validateBeforeSave: false });
+      }
+    } catch (xpErr) {
+      console.error('XP update error:', xpErr.message);
+    }
+
     res.status(201).json({
       success: true,
       message: 'Test evaluated successfully!',
-      result: testResult,
+      result: savedResult,
     });
+
   } catch (error) {
     console.error('Test Submission Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// GET /api/tests/me/stats - Gamification stats: XP, level, streak, badges
+router.get('/me/stats', requireAuth, async (req, res) => {
+  try {
+    const results = await TestResult.find({ studentId: req.user._id })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const totalTests = results.length;
+    const xp = results.reduce((acc, r) => acc + (r.score || 0), 0);
+    const level = Math.floor(xp / 100) + 1;
+
+    // Streak: count consecutive days from today backwards
+    let streak = 0;
+    if (results.length > 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const uniqueDays = [...new Set(results.map(r => {
+        const d = new Date(r.createdAt);
+        d.setHours(0, 0, 0, 0);
+        return d.getTime();
+      }))].sort((a, b) => b - a);
+
+      let expected = today.getTime();
+      for (const dayTs of uniqueDays) {
+        if (dayTs === expected) {
+          streak++;
+          expected -= 86400000;
+        } else if (dayTs === expected - 86400000) {
+          // Yesterday also counts to start streak
+          streak++;
+          expected = dayTs - 86400000;
+        } else {
+          break;
+        }
+      }
+    }
+
+    // Badges
+    const badges = [];
+    if (totalTests >= 1) badges.push('first_test');
+    if (results.some(r => r.accuracyPercentage === 100)) badges.push('perfect_score');
+    if (streak >= 7) badges.push('week_streak');
+    if (streak >= 30) badges.push('month_streak');
+    if (xp >= 500) badges.push('xp_500');
+
+    res.json({ success: true, xp, level, streak, totalTests, badges });
+  } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -198,6 +287,37 @@ router.get('/result/:id', requireAuth, async (req, res) => {
     res.json({ success: true, result });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// GET /api/tests/me/stats - Get current student's gamification stats
+router.get('/me/stats', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('xp level streak lastActiveDate badges name collegeName role');
+    const totalTests = await TestResult.countDocuments({ studentId: req.user._id });
+    const results = await TestResult.find({ studentId: req.user._id }).sort({ createdAt: -1 }).limit(5).lean();
+    res.json({ success: true, stats: { xp: user.xp || 0, level: user.level || 1, streak: user.streak || 0, badges: user.badges || [], totalTests, recentResults: results } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/tests/practice/submit - Practice mode: calculate score without saving to leaderboard
+router.post('/practice/submit', requireAuth, async (req, res) => {
+  try {
+    const { questions, answers } = req.body;
+    // Just calculate and return score without saving
+    let correct = 0;
+    const breakdown = (questions || []).map((q, idx) => {
+      const selected = answers[idx];
+      const isCorrect = selected === q.correctOptionIndex;
+      if (isCorrect) correct++;
+      return { questionText: q.questionText, options: q.options, correctOptionIndex: q.correctOptionIndex, selectedOptionIndex: selected, isCorrect, explanation: q.explanation };
+    });
+    const accuracy = questions.length > 0 ? Math.round((correct / questions.length) * 100) : 0;
+    res.json({ success: true, practice: true, correctAnswers: correct, totalQuestions: questions.length, accuracy, breakdown });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 

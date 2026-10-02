@@ -50,6 +50,13 @@ export default function AdminDashboard() {
   const [qPage, setQPage] = useState(1);
   const qLimit = 10;
 
+  // Bulk delete state
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Mobile sidebar toggle
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   // Editing Question Modal State
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [editForm, setEditForm] = useState({
@@ -510,6 +517,76 @@ export default function AdminDashboard() {
     }
   };
 
+  // Toggle single question checkbox
+  const handleToggleSelectQuestion = (id) => {
+    setSelectedQuestionIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  // Toggle select all visible page questions
+  const handleSelectAllPage = (pageQuestions) => {
+    const pageIds = pageQuestions.map((q) => getCleanId(q._id));
+    const allSelected = pageIds.every((id) => selectedQuestionIds.includes(id));
+    if (allSelected) {
+      setSelectedQuestionIds((prev) => prev.filter((id) => !pageIds.includes(id)));
+    } else {
+      setSelectedQuestionIds((prev) => [...new Set([...prev, ...pageIds])]);
+    }
+  };
+
+  // Bulk delete selected questions
+  const handleBulkDeleteQuestions = async () => {
+    if (selectedQuestionIds.length === 0) return;
+    if (!window.confirm(`Delete ${selectedQuestionIds.length} selected questions? This cannot be undone.`)) return;
+    setIsBulkDeleting(true);
+    try {
+      const res = await apiFetch('/admin/questions/bulk-delete', {
+        method: 'DELETE',
+        body: { ids: selectedQuestionIds },
+      });
+      if (res.success) {
+        setFormMsg({ type: 'success', text: res.message });
+        setSelectedQuestionIds([]);
+        fetchAdminData();
+      }
+    } catch (err) {
+      setFormMsg({ type: 'error', text: err.message });
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
+  // Delete a subject (admin only)
+  const handleDeleteSubject = async (subject) => {
+    const id = getCleanId(subject._id);
+    if (!window.confirm(`Delete subject "${subject.name}" and ALL its topics & questions? This CANNOT be undone!`)) return;
+    try {
+      const res = await apiFetch(`/admin/subjects/${id}`, { method: 'DELETE' });
+      if (res.success) {
+        setFormMsg({ type: 'success', text: res.message });
+        fetchAdminData();
+      }
+    } catch (err) {
+      setFormMsg({ type: 'error', text: err.message });
+    }
+  };
+
+  // Delete a topic (admin only)
+  const handleDeleteTopic = async (topic) => {
+    const id = getCleanId(topic._id);
+    if (!window.confirm(`Delete topic "${topic.name}" and ALL its questions? This CANNOT be undone!`)) return;
+    try {
+      const res = await apiFetch(`/admin/topics/${id}`, { method: 'DELETE' });
+      if (res.success) {
+        setFormMsg({ type: 'success', text: res.message });
+        fetchAdminData();
+      }
+    } catch (err) {
+      setFormMsg({ type: 'error', text: err.message });
+    }
+  };
+
   const sampleCSV = `questionText,optionA,optionB,optionC,optionD,correctOptionIndex,explanation,difficulty
 "What is the worst-case complexity of Merge Sort?","O(n log n)","O(n²)","O(n)","O(1)",0,"Merge sort divides array into half recursively taking O(n log n) in all cases.","Medium"
 "Which HTTP verb is idempotent for updates?","POST","PUT","CONNECT","PATCH",1,"PUT requests are idempotent because repeated identical requests produce the same result.","Easy"`;
@@ -539,27 +616,44 @@ export default function AdminDashboard() {
   return (
     <div className="flex flex-col md:flex-row min-h-sidebar w-full relative items-start">
       
+      {/* MOBILE SIDEBAR TOGGLE */}
+      <div className="md:hidden flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
+        <span className="text-sm font-bold text-white flex items-center gap-2">
+          <Shield className="w-4 h-4 text-emerald-400" />
+          {isTeacher ? 'Faculty Portal' : 'Admin Portal'}
+        </span>
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="p-2 rounded-xl glass-card text-slate-300 hover:text-white"
+        >
+          {sidebarOpen ? <X className="w-5 h-5" /> : <Filter className="w-5 h-5" />}
+        </button>
+      </div>
+
       {/* SIDEBAR NAVIGATION */}
-      <div className="w-full md:w-72 shrink-0 bg-slate-900 border-r border-slate-800 p-4 flex flex-col gap-4 md:sticky md:top-16 md:h-sidebar overflow-y-auto">
+      <div className={`${sidebarOpen ? 'flex' : 'hidden'} md:flex w-full md:w-64 shrink-0 bg-slate-900 border-r border-slate-800 p-4 flex-col gap-3 md:sticky md:top-16 md:h-sidebar overflow-y-auto z-30 absolute md:relative top-12 md:top-0 left-0 shadow-2xl md:shadow-none`}>
         
         {/* Profile Card */}
-        <div className="glass-panel p-5 rounded-3xl border border-emerald-500/20 shadow-2xl flex flex-col items-center text-center">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/30 to-teal-600/30 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mb-3">
-            <Shield className="w-7 h-7" />
+        <div className="glass-panel p-4 rounded-2xl border border-emerald-500/20 shadow-xl flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/30 to-teal-600/30 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shrink-0">
+            <Shield className="w-5 h-5" />
           </div>
-          <h1 className="text-lg font-black text-white leading-tight">
-            {isTeacher ? 'Faculty Portal' : 'Admin Portal'}
-          </h1>
-          <p className="text-xs text-emerald-400 font-semibold mt-1">
-            {isTeacher ? `Prof. ${user?.name || ''}` : 'System Administrator'}
-          </p>
+          <div className="min-w-0">
+            <div className="font-bold text-white text-sm leading-tight truncate">
+              {isTeacher ? 'Faculty Portal' : 'Admin Portal'}
+            </div>
+            <div className="text-xs text-emerald-400 truncate">
+              {user?.name || ''}
+            </div>
+          </div>
         </div>
 
         {/* Navigation Links */}
         <div className="flex flex-col gap-1 mt-2">
           <button
             type="button"
-            onClick={() => { setActiveTab('analytics'); setFormMsg({ type: '', text: '' }); }}
+            onClick={() => { setActiveTab('analytics'); setFormMsg({ type: '', text: '' }); setSidebarOpen(false); }}
             className={`px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center gap-3 ${
               activeTab === 'analytics' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
             }`}
@@ -569,18 +663,18 @@ export default function AdminDashboard() {
           
           <button
             type="button"
-            onClick={() => { setActiveTab('manage_questions'); setFormMsg({ type: '', text: '' }); }}
+            onClick={() => { setActiveTab('manage_questions'); setFormMsg({ type: '', text: '' }); setSidebarOpen(false); }}
             className={`px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center gap-3 ${
               activeTab === 'manage_questions' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
             }`}
           >
-            <HelpCircle className="w-4 h-4" /> {isTeacher ? `My Questions (${allQuestions.length})` : `Manage Questions (${allQuestions.length})`}
+            <HelpCircle className="w-4 h-4" /> {isTeacher ? `My Questions (${allQuestions.length})` : `Questions (${allQuestions.length})`}
           </button>
 
           {isAdmin && (
             <button
               type="button"
-              onClick={() => { setActiveTab('teachers'); setFormMsg({ type: '', text: '' }); }}
+              onClick={() => { setActiveTab('teachers'); setFormMsg({ type: '', text: '' }); setSidebarOpen(false); }}
               className={`px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center gap-3 ${
                 activeTab === 'teachers' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
               }`}
@@ -591,7 +685,7 @@ export default function AdminDashboard() {
 
           <button
             type="button"
-            onClick={() => { setActiveTab('students'); setFormMsg({ type: '', text: '' }); }}
+            onClick={() => { setActiveTab('students'); setFormMsg({ type: '', text: '' }); setSidebarOpen(false); }}
             className={`px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center gap-3 ${
               activeTab === 'students' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
             }`}
@@ -599,11 +693,11 @@ export default function AdminDashboard() {
             <GraduationCap className="w-4 h-4" /> Students ({students.length})
           </button>
 
-          <div className="h-px bg-slate-800 my-2"></div>
+          <div className="h-px bg-slate-800 my-1"></div>
 
           <button
             type="button"
-            onClick={() => { setActiveTab('question'); setFormMsg({ type: '', text: '' }); }}
+            onClick={() => { setActiveTab('question'); setFormMsg({ type: '', text: '' }); setSidebarOpen(false); }}
             className={`px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center gap-3 ${
               activeTab === 'question' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
             }`}
@@ -613,7 +707,7 @@ export default function AdminDashboard() {
 
           <button
             type="button"
-            onClick={() => { setActiveTab('bulk'); setFormMsg({ type: '', text: '' }); }}
+            onClick={() => { setActiveTab('bulk'); setFormMsg({ type: '', text: '' }); setSidebarOpen(false); }}
             className={`px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center gap-3 ${
               activeTab === 'bulk' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
             }`}
@@ -623,7 +717,7 @@ export default function AdminDashboard() {
 
           <button
             type="button"
-            onClick={() => { setActiveTab('topic'); setFormMsg({ type: '', text: '' }); }}
+            onClick={() => { setActiveTab('topic'); setFormMsg({ type: '', text: '' }); setSidebarOpen(false); }}
             className={`px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center gap-3 ${
               activeTab === 'topic' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
             }`}
@@ -633,12 +727,12 @@ export default function AdminDashboard() {
 
           <button
             type="button"
-            onClick={() => { setActiveTab('subject'); setFormMsg({ type: '', text: '' }); }}
+            onClick={() => { setActiveTab('subject'); setFormMsg({ type: '', text: '' }); setSidebarOpen(false); }}
             className={`px-4 py-3 rounded-2xl text-xs font-bold text-left transition-all flex items-center gap-3 ${
               activeTab === 'subject' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
             }`}
           >
-            📚 Add Subject
+            📚 Add / Manage Subjects
           </button>
         </div>
       </div>
@@ -776,6 +870,33 @@ export default function AdminDashboard() {
           </div>
 
           <div className="space-y-3">
+            {/* Bulk Delete Toolbar (visible when items selected) */}
+            {isAdmin && selectedQuestionIds.length > 0 && (
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-red-500/10 border border-red-500/30">
+                <span className="text-xs font-bold text-red-300">
+                  🗂️ {selectedQuestionIds.length} question{selectedQuestionIds.length > 1 ? 's' : ''} selected
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedQuestionIds([])}
+                    className="px-3 py-1.5 text-xs rounded-xl glass-card text-slate-400 hover:text-white"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBulkDeleteQuestions}
+                    disabled={isBulkDeleting}
+                    className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {isBulkDeleting ? 'Deleting...' : `Delete ${selectedQuestionIds.length} Selected`}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {filteredQuestionsList.length === 0 ? (
               <div className="p-8 text-center glass-panel rounded-3xl text-slate-400 text-xs">
                 No questions found. Try adding questions or changing search filters.
@@ -786,35 +907,62 @@ export default function AdminDashboard() {
                 const indexOfFirstQ = indexOfLastQ - qLimit;
                 const currentQuestions = filteredQuestionsList.slice(indexOfFirstQ, indexOfLastQ);
                 const totalPages = Math.ceil(filteredQuestionsList.length / qLimit);
+                const allPageSelected = currentQuestions.every((q) => selectedQuestionIds.includes(getCleanId(q._id)));
                 
                 return (
                   <>
+                    {/* Select All row */}
+                    {isAdmin && (
+                      <div className="flex items-center gap-3 px-2">
+                        <input
+                          type="checkbox"
+                          id="select-all-page"
+                          checked={allPageSelected}
+                          onChange={() => handleSelectAllPage(currentQuestions)}
+                          className="w-4 h-4 accent-indigo-500 cursor-pointer"
+                        />
+                        <label htmlFor="select-all-page" className="text-xs text-slate-400 cursor-pointer select-none">
+                          Select all on this page ({currentQuestions.length})
+                        </label>
+                      </div>
+                    )}
                     {currentQuestions.map((q, idx) => {
                       const canEdit = canUserEditQuestion(q);
                       const displayIdx = indexOfFirstQ + idx + 1;
                       return (
-                  <div key={getCleanId(q._id) || idx} className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
+                  <div key={getCleanId(q._id) || idx} className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-3">
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                            {q.subjectId?.name || 'Subject'}
-                          </span>
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-400">
-                            {q.topicId?.name || 'Topic'}
-                          </span>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                            {q.difficulty || 'Medium'}
-                          </span>
-                          {q.createdBy && (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
-                              Author: {q.createdBy?.name || 'Faculty'}
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        {/* Checkbox for bulk select (admin only) */}
+                        {isAdmin && (
+                          <input
+                            type="checkbox"
+                            checked={selectedQuestionIds.includes(getCleanId(q._id))}
+                            onChange={() => handleToggleSelectQuestion(getCleanId(q._id))}
+                            className="w-4 h-4 mt-1 accent-indigo-500 cursor-pointer shrink-0"
+                          />
+                        )}
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                              {q.subjectId?.name || 'Subject'}
                             </span>
-                          )}
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+                              {q.topicId?.name || 'Topic'}
+                            </span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                              {q.difficulty || 'Medium'}
+                            </span>
+                            {q.createdBy && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                                Author: {q.createdBy?.name || 'Faculty'}
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="font-bold text-white text-sm mt-1 whitespace-pre-wrap break-words">
+                            #{displayIdx}. {q.questionText.replace(/\\n/g, '\n')}
+                          </h3>
                         </div>
-                        <h3 className="font-bold text-white text-sm mt-1 whitespace-pre-wrap break-words">
-                          #{idx + 1}. {q.questionText.replace(/\\n/g, '\n')}
-                        </h3>
                       </div>
 
                       {/* Action Buttons */}
@@ -1608,6 +1756,57 @@ export default function AdminDashboard() {
             {isSubmitting ? 'Creating Subject...' : 'Create Subject'}
           </button>
         </form>
+      )}
+
+      {/* MANAGE SUBJECTS & TOPICS - Admin Only */}
+      {activeTab === 'subject' && isAdmin && subjects.length > 0 && (
+        <div className="space-y-4 mt-4">
+          <h2 className="text-sm font-bold text-white flex items-center gap-2">
+            <Trash2 className="w-4 h-4 text-red-400" /> Manage Existing Subjects & Topics
+          </h2>
+          <div className="space-y-3">
+            {subjects.map((subject) => (
+              <div key={getCleanId(subject._id)} className="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
+                {/* Subject header */}
+                <div className="flex items-center justify-between p-4 border-b border-slate-800/60">
+                  <div>
+                    <span className="font-bold text-white text-sm">{subject.name}</span>
+                    <span className="ml-2 text-xs text-slate-400 font-mono">{subject.code}</span>
+                    <div className="text-xs text-slate-500 mt-0.5">{subject.description}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteSubject(subject)}
+                    className="px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold flex items-center gap-1 cursor-pointer shrink-0"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Delete Subject
+                  </button>
+                </div>
+                {/* Topics list */}
+                {subject.topics && subject.topics.length > 0 && (
+                  <div className="p-3 space-y-2">
+                    {subject.topics.map((topic) => (
+                      <div key={getCleanId(topic._id)} className="flex items-center justify-between p-2.5 rounded-xl glass-card border border-slate-800">
+                        <div>
+                          <span className="text-xs font-semibold text-slate-200">{topic.name}</span>
+                          <span className="ml-2 text-[10px] text-slate-500">{topic.questionCount || 0} questions · {topic.timeLimitMinutes}min</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteTopic(topic)}
+                          className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 cursor-pointer"
+                          title="Delete Topic"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
       )}
       </div>
     </div>

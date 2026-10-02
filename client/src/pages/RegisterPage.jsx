@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { clientRegisterSchema } from '../utils/validation';
+import { apiFetch } from '../utils/api';
 import { User, Mail, Lock, Building, ShieldCheck, ArrowRight, AlertCircle } from 'lucide-react';
 
 export default function RegisterPage() {
@@ -25,8 +26,7 @@ export default function RegisterPage() {
   React.useEffect(() => {
     const fetchColleges = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/colleges');
-        const data = await response.json();
+        const data = await apiFetch('/colleges');
         if (data.success && data.colleges) {
           setCollegesList(data.colleges);
         }

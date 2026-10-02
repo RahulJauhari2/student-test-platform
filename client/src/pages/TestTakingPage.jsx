@@ -17,6 +17,7 @@ export default function TestTakingPage() {
   const [selectedAnswersMap, setSelectedAnswersMap] = useState({});
 
   const [timeLeft, setTimeLeft] = useState(0);
+  const [timeWarning, setTimeWarning] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -84,6 +85,9 @@ export default function TestTakingPage() {
               clearInterval(timerRef.current);
               handleAutoSubmit();
               return 0;
+            }
+            if (prev === 60) {
+              setTimeWarning(true);
             }
             return prev - 1;
           });
@@ -266,6 +270,13 @@ export default function TestTakingPage() {
           >
             <X className="w-4 h-4" />
           </button>
+        </div>
+      )}
+
+      {/* 60-Second Time Warning Banner */}
+      {timeWarning && timeLeft > 0 && (
+        <div className="fixed top-16 left-0 right-0 z-50 mx-4 mt-2 p-3 rounded-2xl bg-red-500/20 border border-red-500/50 text-red-300 font-bold text-xs flex items-center justify-center gap-2 animate-bounce-slow">
+          ⚠️ Sirf {timeLeft} seconds baaki hain! Jaldi karo!
         </div>
       )}
 

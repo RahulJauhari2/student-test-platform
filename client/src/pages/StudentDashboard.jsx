@@ -34,6 +34,7 @@ export default function StudentDashboard() {
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [gamificationStats, setGamificationStats] = useState(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -42,9 +43,10 @@ export default function StudentDashboard() {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const [subjRes, resultsRes] = await Promise.all([
+      const [subjRes, resultsRes, statsRes] = await Promise.all([
         apiFetch('/tests/subjects'),
         apiFetch('/tests/results/my'),
+        apiFetch('/tests/me/stats'),
       ]);
 
       if (subjRes.success) {
@@ -55,6 +57,9 @@ export default function StudentDashboard() {
       }
       if (resultsRes.success) {
         setTestResults(resultsRes.results);
+      }
+      if (statsRes.success) {
+        setGamificationStats(statsRes);
       }
     } catch (error) {
       console.error('Dashboard error:', error);
@@ -102,6 +107,29 @@ export default function StudentDashboard() {
 
   return (
     <div className="pb-24 pt-4 px-4 max-w-7xl mx-auto space-y-6">
+      {/* Daily Motivational Quote */}
+      {(() => {
+        const quotes = [
+          { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
+          { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+          { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+          { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+          { text: "Learning is not attained by chance. It must be sought with ardor.", author: "Abigail Adams" },
+          { text: "Education is the most powerful weapon you can use to change the world.", author: "Nelson Mandela" },
+          { text: "The beautiful thing about learning is that no one can take it away from you.", author: "B.B. King" },
+        ];
+        const todayQuote = quotes[new Date().getDate() % quotes.length];
+        return (
+          <div className="glass-panel p-4 rounded-2xl border border-indigo-500/20 flex items-start gap-3">
+            <span className="text-2xl">💡</span>
+            <div>
+              <p className="text-sm text-slate-200 italic leading-relaxed">"{todayQuote.text}"</p>
+              <p className="text-xs text-indigo-400 font-bold mt-1">— {todayQuote.author}</p>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Welcome Banner Card */}
       <div className="glass-panel p-6 rounded-3xl relative overflow-hidden border border-indigo-500/20 shadow-2xl">
         <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none" />
@@ -148,6 +176,45 @@ export default function StudentDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Gamification Stats Panel */}
+      {gamificationStats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="glass-panel p-4 rounded-2xl border border-amber-500/20 text-center">
+            <div className="text-2xl mb-1">⚡</div>
+            <div className="text-xl font-black text-amber-400">{gamificationStats.xp}</div>
+            <div className="text-xs text-slate-400 font-semibold">XP Points</div>
+          </div>
+          <div className="glass-panel p-4 rounded-2xl border border-purple-500/20 text-center">
+            <div className="text-2xl mb-1">🏆</div>
+            <div className="text-xl font-black text-purple-400">Level {gamificationStats.level}</div>
+            <div className="text-xs text-slate-400 font-semibold">Your Level</div>
+          </div>
+          <div className="glass-panel p-4 rounded-2xl border border-orange-500/20 text-center">
+            <div className="text-2xl mb-1">🔥</div>
+            <div className="text-xl font-black text-orange-400">{gamificationStats.streak} days</div>
+            <div className="text-xs text-slate-400 font-semibold">Daily Streak</div>
+          </div>
+          <div className="glass-panel p-4 rounded-2xl border border-emerald-500/20 text-center">
+            <div className="text-2xl mb-1">📝</div>
+            <div className="text-xl font-black text-emerald-400">{gamificationStats.totalTests}</div>
+            <div className="text-xs text-slate-400 font-semibold">Tests Taken</div>
+          </div>
+        </div>
+      )}
+
+      {/* Badges */}
+      {gamificationStats && gamificationStats.badges.length > 0 && (
+        <div className="glass-panel p-4 rounded-2xl border border-slate-800">
+          <h3 className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">🎖️ Your Badges</h3>
+          <div className="flex flex-wrap gap-2">
+            {gamificationStats.badges.map((badge) => {
+              const badgeMap = { first_test: '🎯 First Test', perfect_score: '💯 Perfect Score', week_streak: '🔥 7-Day Streak', month_streak: '⚡ 30-Day Streak', xp_500: '🌟 500 XP' };
+              return <span key={badge} className="px-3 py-1.5 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-bold">{badgeMap[badge] || badge}</span>;
+            })}
+          </div>
+        </div>
+      )}
 
       {/* STUDENT PERSONALIZED STUDY RECOMMENDATIONS REPORT */}
       {stats.weakTopics.length > 0 && (

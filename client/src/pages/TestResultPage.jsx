@@ -51,8 +51,74 @@ export default function TestResultPage() {
     }
   };
 
-  const handlePrint = () => {
+  const handlePrintScorecard = () => {
     window.print();
+  };
+
+  const handlePrintCertificate = () => {
+    if (!result) return;
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Certificate - ${result.studentName}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: Georgia, serif; background: white; color: black; padding: 40px; }
+          .cert { border: 8px double #b45309; padding: 40px; max-width: 720px; margin: 0 auto; text-align: center; }
+          .badge { font-size: 11px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; color: #b45309; margin-bottom: 8px; }
+          .platform { font-size: 28px; font-weight: bold; color: #1e1b4b; margin-bottom: 4px; }
+          .subtitle { font-size: 12px; color: #6b7280; margin-bottom: 24px; }
+          .divider { border: none; border-top: 2px solid #b45309; margin: 20px 0; }
+          .certify { font-size: 13px; color: #6b7280; margin-bottom: 8px; }
+          .student-name { font-size: 32px; font-weight: bold; color: #92400e; margin: 8px 0; letter-spacing: 1px; }
+          .college { font-size: 13px; color: #374151; margin-bottom: 8px; }
+          .desc { font-size: 12px; color: #6b7280; margin: 8px 0; }
+          .subject { font-size: 16px; font-weight: bold; color: #1e40af; margin: 6px 0; }
+          .score { font-size: 13px; color: #374151; margin-top: 8px; }
+          .score strong { color: #065f46; }
+          .footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 48px; font-size: 11px; color: #6b7280; }
+          .sig-line { border-top: 1px solid #9ca3af; padding-top: 6px; width: 180px; text-align: center; }
+          .sig-title { font-weight: bold; color: #1f2937; font-size: 12px; }
+          .award-icon { font-size: 48px; margin-bottom: 12px; }
+          @media print { body { padding: 20px; } }
+        </style>
+      </head>
+      <body>
+        <div class="cert">
+          <div class="award-icon">🏆</div>
+          <div class="badge">Official Certificate of Achievement</div>
+          <div class="platform">EduRank Assessment Platform</div>
+          <div class="subtitle">Verified Academic Excellence Record</div>
+          <hr class="divider" />
+          <div class="certify">This is to certify that</div>
+          <div class="student-name">${result.studentName}</div>
+          <div class="college">representing <strong>${result.collegeName}</strong></div>
+          <div class="desc">has successfully completed the official examination in</div>
+          <div class="subject">${result.subjectName} — ${result.topicName}</div>
+          <div class="score">with an overall score of <strong>${result.score} Points</strong> (${result.accuracyPercentage}% Accuracy)</div>
+          <hr class="divider" />
+          <div class="footer">
+            <div>
+              <div><strong>Date Issued:</strong></div>
+              <div>${new Date(result.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+              <div style="margin-top:12px;"><strong>Verification ID:</strong></div>
+              <div style="font-family:monospace;font-size:9px;color:#9ca3af;">${result._id}</div>
+            </div>
+            <div class="sig-line">
+              <div class="sig-title">Instructor's Signature</div>
+              <div style="font-size:10px;color:#9ca3af;margin-top:3px;">EduRank Official</div>
+            </div>
+          </div>
+        </div>
+        <script>
+          window.onload = function() { window.print(); window.onafterprint = function() { window.close(); }; }
+        </script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   if (loading) {
@@ -136,7 +202,7 @@ export default function TestResultPage() {
           )}
 
           <button
-            onClick={handlePrint}
+            onClick={handlePrintScorecard}
             className="px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-indigo-500/25 transition-all"
           >
             <Printer className="w-4 h-4" /> Print Scorecard
@@ -293,7 +359,7 @@ export default function TestResultPage() {
 
           <div className="pt-4 flex items-center justify-center gap-3 print:hidden">
             <button
-              onClick={handlePrint}
+              onClick={handlePrintCertificate}
               className="px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs flex items-center gap-2 shadow-lg shadow-amber-500/30 transition-all cursor-pointer"
             >
               <Printer className="w-4 h-4" /> Download / Print PDF Certificate
