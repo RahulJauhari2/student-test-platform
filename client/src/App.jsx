@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Header from './components/Header';
-import MobileNav from './components/MobileNav';
+
 import BottomNav from './components/BottomNav';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -49,7 +49,7 @@ export default function App() {
                 <Route path="*" element={<StudentDashboard />} />
               </Routes>
             </main>
-            <MobileNav />
+
             <BottomNav />
           </div>
         </Router>
