@@ -479,3 +479,106 @@ input, select, textarea {
 .opacity-0 { opacity: 0; }
 .opacity-100 { opacity: 1; }
 .group-hover\\:scale-105:hover { transform: scale(1.05); }
+
+/* ============================================
+   HEADER — Mobile-first responsive styles
+   ============================================ */
+
+/* Desktop nav — hidden on mobile, flex on desktop */
+.header-desktop-nav {
+  display: none;
+  align-items: center;
+  gap: 1.5rem;
+  flex: 1;
+  justify-content: center;
+}
+@media (min-width: 768px) {
+  .header-desktop-nav { display: flex; }
+}
+
+.header-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #cbd5e1;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.header-nav-link:hover { color: #fff; }
+
+/* User info — hidden on mobile */
+.header-user-info { display: none; text-align: right; }
+@media (min-width: 640px) {
+  .header-user-info { display: block; }
+}
+
+/* Logout button — always visible */
+.header-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 12px;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  color: #cbd5e1;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.header-logout-btn:hover { background: rgba(239,68,68,0.2); color: #f87171; }
+
+/* "Logout" text — hidden on very small screens */
+.header-logout-text { display: none; }
+@media (min-width: 480px) {
+  .header-logout-text { display: inline; }
+}
+
+/* Hamburger — only on mobile */
+.header-hamburger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(30, 41, 59, 0.5);
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.header-hamburger:hover { color: #fff; }
+@media (min-width: 768px) { .header-hamburger { display: none; } }
+
+/* Mobile dropdown */
+.header-mobile-menu {
+  border-top: 1px solid rgba(51,65,85,0.8);
+  background: rgba(15,23,42,0.97);
+  backdrop-filter: blur(12px);
+  padding: 12px 16px 16px;
+}
+@media (min-width: 768px) { .header-mobile-menu { display: none; } }
+
+.header-mobile-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #cbd5e1;
+  text-decoration: none;
+  transition: all 0.2s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+.header-mobile-link:hover { background: rgba(30,41,59,0.8); color: #fff; }
+.header-mobile-logout { color: #f87171 !important; }
+.header-mobile-logout:hover { background: rgba(239,68,68,0.1) !important; }
