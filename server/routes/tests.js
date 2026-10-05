@@ -290,17 +290,7 @@ router.get('/result/:id', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/tests/me/stats - Get current student's gamification stats
-router.get('/me/stats', requireAuth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id).select('xp level streak lastActiveDate badges name collegeName role');
-    const totalTests = await TestResult.countDocuments({ studentId: req.user._id });
-    const results = await TestResult.find({ studentId: req.user._id }).sort({ createdAt: -1 }).limit(5).lean();
-    res.json({ success: true, stats: { xp: user.xp || 0, level: user.level || 1, streak: user.streak || 0, badges: user.badges || [], totalTests, recentResults: results } });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
+
 
 // POST /api/tests/practice/submit - Practice mode: calculate score without saving to leaderboard
 router.post('/practice/submit', requireAuth, async (req, res) => {

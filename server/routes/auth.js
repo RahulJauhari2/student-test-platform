@@ -116,13 +116,20 @@ router.post('/forgot-password', validateBody(forgotPasswordSchema), async (req, 
     const resetToken = user.createResetPasswordToken();
     await user.save({ validateBeforeSave: false });
 
-    // Return reset token in response for quick testing
-    res.json({
-      success: true,
-      message: 'Password reset token generated successfully.',
-      resetToken,
-      resetUrl: `/reset-password/${resetToken}`,
-    });
+    if (process.env.NODE_ENV !== 'production') {
+      // Return reset token in response for quick testing
+      res.json({
+        success: true,
+        message: 'Password reset token generated successfully.',
+        resetToken,
+        resetUrl: `/reset-password/${resetToken}`,
+      });
+    } else {
+      res.json({
+        success: true,
+        message: 'If an account exists, a reset link would be sent',
+      });
+    }
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

@@ -6,11 +6,13 @@ const questionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Topic',
       required: true,
+      index: true,
     },
     subjectId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Subject',
       required: true,
+      index: true,
     },
     questionText: {
       type: String,
