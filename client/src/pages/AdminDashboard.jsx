@@ -614,10 +614,10 @@ export default function AdminDashboard() {
   });
 
   return (
-    <div className="flex flex-col md:flex-row min-h-sidebar w-full relative items-start">
+    <div className="admin-layout">
       
       {/* MOBILE SIDEBAR TOGGLE */}
-      <div className="md:hidden flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
+      <div className="admin-mobile-toggle flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
         <span className="text-sm font-bold text-white flex items-center gap-2">
           <Shield className="w-4 h-4 text-emerald-400" />
           {isTeacher ? 'Faculty Portal' : 'Admin Portal'}
@@ -632,7 +632,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* SIDEBAR NAVIGATION */}
-      <div className={`${sidebarOpen ? 'flex' : 'hidden'} md:flex w-full md:w-64 shrink-0 bg-slate-900 border-r border-slate-800 p-4 flex-col gap-3 md:sticky md:top-16 md:h-sidebar overflow-y-auto z-30 absolute md:relative top-12 md:top-0 left-0 shadow-2xl md:shadow-none`}>
+      <div className={`admin-sidebar ${sidebarOpen ? 'admin-sidebar-open' : ''}`}>
         
         {/* Profile Card */}
         <div className="glass-panel p-4 rounded-2xl border border-emerald-500/20 shadow-xl flex items-center gap-3">
@@ -738,11 +738,11 @@ export default function AdminDashboard() {
       </div>
 
       {/* MAIN CONTENT AREA */}
-      <div className="flex-1 min-w-0 space-y-6 p-4 md:p-8 pb-24">
+      <div className="admin-content">
         
         {/* Quick Stats Banner (always visible on top) */}
         {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 admin-grid-4 gap-4">
             {isAdmin && (
               <div className="glass-panel p-4 rounded-3xl border border-emerald-500/20 flex flex-col justify-center">
                 <span className="text-xs text-slate-400 font-semibold mb-1">Teachers</span>
@@ -791,7 +791,7 @@ export default function AdminDashboard() {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 admin-grid-4 gap-3">
               <div className="glass-card p-4 rounded-2xl">
                 <div className="text-xs text-slate-400 font-bold uppercase">Class Submissions</div>
                 <div className="text-2xl font-black text-indigo-400 mt-1">{analyticsData.totalSubmissions}</div>
@@ -821,7 +821,7 @@ export default function AdminDashboard() {
                 <Award className="w-4 h-4 text-amber-400" /> Class Top Performers Leaderboard
               </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 admin-grid-2 gap-3">
                 {analyticsData.topStudents.map((st, idx) => (
                   <div key={idx} className="p-3 rounded-2xl glass-card border border-slate-800 flex items-center justify-between">
                     <div>
@@ -843,8 +843,8 @@ export default function AdminDashboard() {
       {/* TAB: MANAGE & EDIT QUESTIONS */}
       {activeTab === 'manage_questions' && (
         <div className="space-y-4">
-          <div className="glass-panel p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 border border-slate-800">
-            <div className="relative w-full sm:flex-1">
+          <div className="glass-panel p-4 rounded-2xl flex flex-col admin-flex-row items-center justify-between gap-3 border border-slate-800">
+            <div className="relative w-full admin-flex-1">
               <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
               <input
                 type="text"
@@ -858,7 +858,7 @@ export default function AdminDashboard() {
             <select
               value={qSubjectFilter}
               onChange={(e) => setQSubjectFilter(e.target.value)}
-              className="w-full sm:w-auto p-2 rounded-xl glass-input text-xs"
+              className="w-full admin-w-auto p-2 rounded-xl glass-input text-xs"
             >
               <option value="" className="bg-slate-900">All Subjects</option>
               {subjects.map((s) => (
@@ -1002,7 +1002,7 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Options Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                    <div className="grid grid-cols-1 admin-grid-2 gap-2 pt-1">
                       {q.options?.map((opt, optIdx) => {
                         const isCorrect = Number(q.correctOptionIndex) === optIdx;
                         return (
@@ -1258,7 +1258,7 @@ export default function AdminDashboard() {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 admin-grid-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">Option A</label>
                 <input
@@ -1301,7 +1301,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 admin-grid-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">Correct Answer</label>
                 <select
@@ -1376,7 +1376,7 @@ export default function AdminDashboard() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 admin-grid-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">Target Subject</label>
               <select
@@ -1416,7 +1416,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Format selector & File upload dropzone */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 admin-grid-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">Data Format</label>
               <div className="grid grid-cols-2 gap-2">
@@ -1506,7 +1506,7 @@ export default function AdminDashboard() {
         <form onSubmit={handleAddQuestion} className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
           <h2 className="text-base font-bold text-white">Create New Multiple Choice Question</h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 admin-grid-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">Select Subject</label>
               <select
@@ -1554,7 +1554,7 @@ export default function AdminDashboard() {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 admin-grid-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">Option A</label>
               <input
@@ -1601,7 +1601,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 admin-grid-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">Correct Answer Index</label>
               <select

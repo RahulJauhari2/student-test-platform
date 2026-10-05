@@ -582,3 +582,102 @@ input, select, textarea {
 .header-mobile-link:hover { background: rgba(30,41,59,0.8); color: #fff; }
 .header-mobile-logout { color: #f87171 !important; }
 .header-mobile-logout:hover { background: rgba(239,68,68,0.1) !important; }
+
+/* ============================================
+   ADMIN DASHBOARD — Mobile-first layout
+   ============================================ */
+
+.admin-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 60px);
+  width: 100%;
+  position: relative;
+  align-items: flex-start;
+}
+@media (min-width: 768px) {
+  .admin-layout { flex-direction: row; }
+}
+
+/* Mobile toggle bar — visible on mobile only */
+.admin-mobile-toggle { display: flex; }
+@media (min-width: 768px) {
+  .admin-mobile-toggle { display: none; }
+}
+
+/* Sidebar — hidden on mobile, always visible on desktop */
+.admin-sidebar {
+  display: none;
+  width: 100%;
+  flex-shrink: 0;
+  background: #0f172a;
+  border-right: 1px solid rgba(30,41,59,0.8);
+  padding: 1rem;
+  flex-direction: column;
+  gap: 0.75rem;
+  z-index: 30;
+  position: absolute;
+  top: 48px;
+  left: 0;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
+}
+.admin-sidebar-open {
+  display: flex;
+}
+@media (min-width: 768px) {
+  .admin-sidebar {
+    display: flex !important;
+    width: 16rem;
+    position: sticky;
+    top: 60px;
+    height: calc(100vh - 60px);
+    box-shadow: none;
+    max-height: none;
+  }
+}
+
+/* Main content */
+.admin-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem;
+  padding-bottom: 6rem;
+}
+@media (min-width: 768px) {
+  .admin-content { padding: 2rem; padding-bottom: 6rem; }
+}
+
+/* Responsive grid: 4 cols on sm+ */
+.admin-grid-4 {}
+@media (min-width: 640px) {
+  .admin-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* Responsive grid: 2 cols on sm+ */
+.admin-grid-2 {}
+@media (min-width: 640px) {
+  .admin-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* flex-row on sm+ */
+.admin-flex-row {}
+@media (min-width: 640px) {
+  .admin-flex-row { flex-direction: row; }
+}
+
+/* flex-1 on sm+ */
+.admin-flex-1 {}
+@media (min-width: 640px) {
+  .admin-flex-1 { flex: 1; }
+}
+
+/* w-auto on sm+ */
+.admin-w-auto {}
+@media (min-width: 640px) {
+  .admin-w-auto { width: auto; }
+}
